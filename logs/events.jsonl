@@ -1,1 +1,3 @@
 {"ts": 1773670067.575955, "event": "stage_start", "stage": "init", "iteration": 0, "action_type": "bash", "description": "项目初始化完成，推进到 literature_search 后再执行文献调研"}
+{"ts": 1773670076.65797, "event": "stage_end", "stage": "init", "iteration": 0, "duration_sec": 51.29633092880249, "score": null, "next_stage": "literature_search"}
+{"ts": 1773670081.896599, "event": "stage_start", "stage": "literature_search", "iteration": 0, "action_type": "skill", "description": "文献调研：arXiv 搜索 + Web 搜索，建立领域现状基础"}
