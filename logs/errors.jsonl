@@ -1,0 +1,1 @@
+{"error_type": "ConfigError", "category": "config", "message": "Feishu/Lark MCP servers not available - neither mcp__feishu__* nor mcp__lark__* tools configured in this session", "context": {"source": "lark_sync", "stage": "literature_search", "workspace": "TECA"}, "ts": "2026-03-17T01:20:00+08:00"}
