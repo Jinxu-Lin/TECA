@@ -1,0 +1,5 @@
+{
+  "outcome": "go_with_focus",
+  "notes": "六维辩论综合判定 Go with focus。核心理由：真实方法论空白 + 极低验证成本 + 失败保底。Kill gates: (1) angular variance < 0.05, (2) TECS(real) vs TECS(null) Cohen's d < 0.5, (3) 控制梯度范数后 TECS 消失。Pivot 备选：behavioral probing。",
+  "date": "2026-03-16"
+}
