@@ -1,0 +1,378 @@
+{
+  "tasks": [
+    {
+      "id": "setup_env",
+      "name": "Environment Setup & Dependency Installation",
+      "description": "Install EasyEdit (pinned commit), transformers, torch, scipy, scikit-learn, rank_bm25. Download GPT-2-XL weights. Download CounterFact dataset. Verify GPU availability and VRAM. Create output directory structure under exp/.",
+      "type": "setup",
+      "depends_on": [],
+      "expected_output": "exp/setup_complete.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 15,
+      "shared_resources": [
+        {"type": "checkpoint", "name": "gpt2-xl", "path": "shared/checkpoints/gpt2-xl"},
+        {"type": "dataset", "name": "counterfact", "path": "shared/datasets/counterfact"}
+      ],
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "GPT-2-XL loads successfully, EasyEdit ROME imports without error, CounterFact dataset has >= 200 valid entries"
+      },
+      "visualizations": []
+    },
+    {
+      "id": "phase1_rome_validation",
+      "name": "Phase 1: ROME Editing Validation",
+      "description": "Apply EasyEdit ROME to N CounterFact facts on GPT-2-XL at layer l*=17. Measure editing efficacy (P(new) > P(old)), generalization (paraphrase success), locality (unrelated fact preservation). Save per-fact delta_W tensors to exp/tensors/. Gate: efficacy > 75%.",
+      "type": "baseline",
+      "depends_on": ["setup_env"],
+      "expected_output": "exp/results/phase1_rome_validation.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 20,
+      "shared_resources": [
+        {"type": "checkpoint", "name": "gpt2-xl", "path": "shared/checkpoints/gpt2-xl"},
+        {"type": "dataset", "name": "counterfact", "path": "shared/datasets/counterfact"}
+      ],
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "Editing efficacy > 75% on pilot set AND delta_W tensors saved with correct shape (1600, 1600) AND no OOM errors"
+      },
+      "visualizations": [
+        {
+          "type": "table",
+          "description": "ROME editing metrics summary (efficacy, generalization, locality)",
+          "columns": ["Metric", "Mean", "Std", "Min", "Max"],
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "phase2_tda_gradient",
+      "name": "Phase 2: TDA Gradient Computation & Validation",
+      "description": "For each fact: (1) BM25-retrieve top-20 docs from Wikipedia subset; (2) compute per-document gradients nabla_W L(z_i; theta) at layer l*=17; (3) sanity check: within-cluster vs between-cluster cosine similarity (permutation test, 1000 permutations); (4) aggregate into g_M with BM25 weights. Save g_M tensors to exp/tensors/. Gate: within > between at p < 0.01.",
+      "type": "baseline",
+      "depends_on": ["setup_env"],
+      "expected_output": "exp/results/phase2_tda_validation.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 25,
+      "shared_resources": [
+        {"type": "checkpoint", "name": "gpt2-xl", "path": "shared/checkpoints/gpt2-xl"},
+        {"type": "dataset", "name": "wikipedia-subset", "path": "shared/datasets/wikipedia_subset"}
+      ],
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "Within-cluster cosine > between-cluster cosine at p < 0.05 AND gradient tensors have correct shape (1600, 1600) AND mean gradient norm > 1e-8 (non-degenerate)"
+      },
+      "visualizations": [
+        {
+          "type": "table",
+          "description": "TDA gradient validation: within vs between cluster cosine similarity",
+          "columns": ["Metric", "Within-cluster", "Between-cluster", "p-value"],
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "phase3_tecs_core",
+      "name": "Phase 3: Core TECS Measurement with 5 Null Baselines",
+      "description": "Compute TECS = cos(vec(delta_W_E), vec(g_M)) at layer l*=17 for all facts. Compute 5 null baselines: Null-A (random-fact swap), Null-B (wrong-layer l*+-5), Null-C (failed-edit subset), Null-D (shuffled gradient), Null-E (random direction). Compute Cohen's d (TECS_real vs each null) with 10,000 bootstrap 95% CI. Bonferroni correction alpha=0.01. Decision gate: d>0.2 for positive path, d<=0.2 for negative path.",
+      "type": "experiment",
+      "depends_on": ["phase1_rome_validation", "phase2_tda_gradient"],
+      "expected_output": "exp/results/phase3_tecs_core.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 20,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "All 5 null baselines computed without error AND TECS distribution is not degenerate (std > 1e-6) AND bootstrap CI computed successfully"
+      },
+      "visualizations": [
+        {
+          "type": "table",
+          "description": "TECS vs null baselines: Cohen's d and 95% CI",
+          "columns": ["Comparison", "Mean_Real", "Mean_Null", "Cohen_d", "CI_low", "CI_high", "p_value"],
+          "paper_section": "experiments"
+        },
+        {
+          "type": "histogram",
+          "description": "TECS distribution: real vs Null-A overlay",
+          "x": "TECS value",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "phase4_ablation",
+      "name": "Phase 4: TECS Ablation Study (4 Axes)",
+      "description": "Test TECS robustness across 4 ablation axes: (1) Top-k cutoff: k in {5, 10, 20, 50}; (2) Weighting: BM25 vs uniform vs TF-IDF; (3) Loss: cross-entropy on object token vs full-sequence vs margin; (4) Gradient scope: layer l* only vs [l*-2, l*+2] aggregated. Compute Cohen's d for each setting. Robustness criterion: d variation < 20%.",
+      "type": "ablation",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/phase4_ablation.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 15,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "All 4 ablation axes computed AND TECS d variation < 30% (relaxed for pilot) AND no NaN/Inf values"
+      },
+      "visualizations": [
+        {
+          "type": "table",
+          "description": "Ablation robustness: TECS Cohen's d across settings",
+          "columns": ["Axis", "Setting", "Cohen_d", "CI_low", "CI_high"],
+          "paper_section": "experiments"
+        },
+        {
+          "type": "bar_chart",
+          "description": "Ablation sensitivity: Cohen's d per ablation setting",
+          "x": "ablation_setting",
+          "y": "cohens_d",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "phase5_decomposition",
+      "name": "Phase 5: Rank-One Decomposition Validation",
+      "description": "Test H2: compute decomposed TECS = cos(C^{-1}k*, k_i) * cos(v* - Wk*, d_v_i) for each fact. Compare with full TECS via Spearman rho. Compare empirical null variance with theoretical 1/d_k. Determine which component (key vs value alignment) carries more signal. CPU-only computation using pre-saved tensors.",
+      "type": "analysis",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/phase5_decomposition.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 0,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 10,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "Spearman rho between decomposed and full TECS is computable AND key/value components have finite values AND empirical null variance within 10x of theoretical prediction"
+      },
+      "visualizations": [
+        {
+          "type": "scatter",
+          "description": "Full TECS vs decomposed product, colored by key/value dominance",
+          "x": "full_TECS",
+          "y": "decomposed_TECS",
+          "paper_section": "experiments"
+        },
+        {
+          "type": "bar_chart",
+          "description": "Key alignment vs value alignment component magnitudes",
+          "x": "component",
+          "y": "mean_absolute_value",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "positive_dose_response",
+      "name": "Positive Path: Dose-Response Analysis (H3)",
+      "description": "Conditional on d > 0.2 from Phase 3. Compute partial Spearman correlation between TECS and ROME editing efficacy, controlling for pre-edit perplexity and relation type. Logistic regression P(edit_success) ~ TECS + covariates with LOOCV AUROC. Compare with Causal Tracing localization score as predictor. Threshold: partial rho > 0.2, delta_AUROC > 0.05.",
+      "type": "experiment",
+      "depends_on": ["phase3_tecs_core", "phase5_decomposition"],
+      "expected_output": "exp/results/positive_dose_response.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 0,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 10,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "Partial Spearman correlation computable AND LOOCV AUROC computable AND no convergence failures in logistic regression"
+      },
+      "visualizations": [
+        {
+          "type": "scatter",
+          "description": "TECS vs editing efficacy with regression line and CI band",
+          "x": "TECS",
+          "y": "editing_efficacy",
+          "paper_section": "experiments"
+        },
+        {
+          "type": "table",
+          "description": "Predictive comparison: TECS vs Causal Tracing vs covariates-only AUROC",
+          "columns": ["Model", "AUROC", "Delta_AUROC", "p_value"],
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "positive_layer_sweep",
+      "name": "Positive Path: Layer-Sweep Profile (H4, H9)",
+      "description": "Conditional on d > 0.2. Compute TECS at all 48 GPT-2-XL layers for 50 representative facts. Compare layer profile with Causal Tracing indirect effect profile (Spearman rho on 48-layer vector). Test H4: TECS at l* > TECS at l*+-5 with Cohen's d > 0.3. Test H9: layer profile correlation with CT profile.",
+      "type": "experiment",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/positive_layer_sweep.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 30,
+      "pilot": {
+        "samples": 25,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "TECS computable at all 48 layers AND no OOM AND layer profile shows non-uniform pattern (max/min ratio > 1.5)"
+      },
+      "visualizations": [
+        {
+          "type": "line_plot",
+          "description": "TECS layer profile across all 48 layers with Causal Tracing overlay",
+          "x": "layer",
+          "y": "mean_TECS",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "positive_spectral",
+      "name": "Positive Path: Spectral TECS Analysis (H5)",
+      "description": "Conditional on d > 0.2. SVD of W at layer l*. Project delta_W_E and g_M onto 4 spectral bands: top-10, 10-50, 50-200, 200+ singular values. Compute band-wise TECS and Cohen's d. Test H5: mid-range (10-200) shows highest alignment. Use pre-computed SVD to avoid redundant computation.",
+      "type": "experiment",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/positive_spectral.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 15,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "SVD of W at l* computable AND band-wise projections have non-zero norm AND spectral TECS values are finite"
+      },
+      "visualizations": [
+        {
+          "type": "bar_chart",
+          "description": "Spectral TECS: alignment per singular value band",
+          "x": "spectral_band",
+          "y": "mean_TECS",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "negative_subspace_geometry",
+      "name": "Negative Path: Subspace Geometry & Principal Angles (H7)",
+      "description": "Conditional on d <= 0.2. Construct editing subspace S_E = span(delta_W_1,...,delta_W_N) and attribution subspace S_A = span(g_1,...,g_N) using top-r principal components (r by elbow criterion). Compute principal angles via scipy.linalg.subspace_angles. Compare theta_min against 100 random subspace samples. Test H7: structured (theta_min < random at p<0.01) vs random misalignment.",
+      "type": "experiment",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/negative_subspace_geometry.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 0,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 15,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "Principal angles computable AND random baseline generated AND theta_min value is finite AND elbow criterion produces r in [5, 50]"
+      },
+      "visualizations": [
+        {
+          "type": "histogram",
+          "description": "Principal angle distribution: S_E vs S_A compared to random subspace baseline",
+          "x": "principal_angle_degrees",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "negative_whitening",
+      "name": "Negative Path: Whitening Decomposition (H6)",
+      "description": "Conditional on d <= 0.2. Compute TECS_unwhitened using raw k* (without C^{-1}) in the editing direction construction. Compare TECS_whitened vs TECS_unwhitened via Cohen's d. Test H6: if unwhitened >> whitened (d > 0.3), ROME's covariance-inverse rotation explains the geometric gap. CPU computation on pre-saved tensors plus one GPU pass to extract C (key covariance matrix).",
+      "type": "experiment",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/negative_whitening.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 10,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "C matrix extractable from EasyEdit internals AND TECS_unwhitened computable AND both distributions have finite mean and std"
+      },
+      "visualizations": [
+        {
+          "type": "histogram",
+          "description": "TECS_whitened vs TECS_unwhitened distributions overlay",
+          "x": "TECS_value",
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "negative_memit",
+      "name": "Negative Path: MEMIT Comparison",
+      "description": "Conditional on d <= 0.2. Apply MEMIT (multi-layer editing) via EasyEdit to the same fact set. Measure alignment between MEMIT's distributed update vectors and TDA gradients across edited layers. Compare with ROME's single-layer alignment pattern. Tests whether distributed editing yields different geometric alignment.",
+      "type": "experiment",
+      "depends_on": ["phase3_tecs_core", "phase2_tda_gradient"],
+      "expected_output": "exp/results/negative_memit.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 1,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 25,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 900,
+        "pass_criteria": "MEMIT editing succeeds on pilot set AND multi-layer alignment values computable AND efficacy > 70%"
+      },
+      "visualizations": [
+        {
+          "type": "table",
+          "description": "ROME vs MEMIT alignment comparison across layers",
+          "columns": ["Method", "Layer", "Mean_Alignment", "Cohen_d_vs_null"],
+          "paper_section": "experiments"
+        }
+      ]
+    },
+    {
+      "id": "secondary_consolidation",
+      "name": "Secondary: Consolidation Correlation (H8)",
+      "description": "Test CLS theory prediction: facts with higher training frequency (BM25 retrieval count as proxy) show higher |TECS|. Spearman rho(|TECS|, BM25_count) controlling for pre-edit perplexity. Low priority, runs on pre-computed data.",
+      "type": "analysis",
+      "depends_on": ["phase3_tecs_core"],
+      "expected_output": "exp/results/secondary_consolidation.json",
+      "candidate_id": "cand_a",
+      "gpu_count": 0,
+      "multi_gpu_strategy": "single",
+      "estimated_minutes": 5,
+      "pilot": {
+        "samples": 100,
+        "seed": 42,
+        "timeout": 300,
+        "pass_criteria": "Correlation computable AND BM25 counts available for all facts"
+      },
+      "visualizations": [
+        {
+          "type": "scatter",
+          "description": "BM25 retrieval count vs |TECS| with regression line",
+          "x": "bm25_count",
+          "y": "abs_TECS",
+          "paper_section": "experiments"
+        }
+      ]
+    }
+  ]
+}
