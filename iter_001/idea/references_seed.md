@@ -1,0 +1,11 @@
+- Meng et al. (2022), 2202.05262: ROME — causal tracing + rank-one editing
+- Meng et al. (2022), 2210.07229: MEMIT — mass editing memory in transformers
+- 2303.12922: Revisiting the Fragility of Influence Functions — Spearman miss-relation
+- 2409.19998: Do Influence Functions Work on LLMs? — IF 三重失效 + RepSim 优于 IF
+- 2602.09987: Infusion — IF 逆向优化，LM 上 0.1% rank flip
+- 2601.21996: MDA — 参数子空间 IF
+- 2301.04213: Hase et al. — Does Localization Inform Editing? causal tracing 与编辑成功率无关
+- 2409.00617: 知识 entity/relation 分离存储
+- 2502.20992: Capability > knowledge localization
+- 2507.09424: DATE-LM — unified task-based TDA evaluation
+- 2505.18513: AirRep — 可训练编码器优化表征归因

@@ -4,3 +4,9 @@ __pycache__/
 *.egg-info/
 data/
 results/
+.venv/
+CLAUDE.md
+.claude/agents
+.claude/skills
+.claude/settings.local.json
+.sibyl/system.json
