@@ -157,17 +157,26 @@ def _default_edit_layer(model) -> int:
 def _target_probability(
     model, tokenizer, prompt: str, target: str, device: str,
 ) -> float:
-    """Compute P(target | prompt) using greedy next-token probability."""
+    """Compute P(target | prompt) using greedy next-token probability.
+
+    Tries both with and without leading space, since GPT-2 tokenizes
+    ' Antarctica' differently from 'Antarctica'.
+    """
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
-    target_ids = tokenizer.encode(target, add_special_tokens=False)
-    if not target_ids:
-        return 0.0
+    # Try with leading space first (GPT-2 convention for word-initial tokens)
+    target_with_space = " " + target.lstrip()
+    target_ids_space = tokenizer.encode(target_with_space, add_special_tokens=False)
+    target_ids_nospace = tokenizer.encode(target, add_special_tokens=False)
 
     with torch.no_grad():
         logits = model(**inputs).logits
     last_logits = logits[0, -1, :]
     probs = torch.softmax(last_logits, dim=-1)
-    return probs[target_ids[0]].item()
+
+    # Return the max of both variants
+    prob_space = probs[target_ids_space[0]].item() if target_ids_space else 0.0
+    prob_nospace = probs[target_ids_nospace[0]].item() if target_ids_nospace else 0.0
+    return max(prob_space, prob_nospace)
 
 
 def _compute_key_vector(
@@ -190,17 +199,22 @@ def _compute_key_vector(
     # Find last occurrence of subject tokens in prompt
     subject_end_pos = _find_subject_last_token_pos(prompt_ids, subject_ids)
 
-    # Hook to capture the MLP input at the edit layer
+    # Hook to capture the c_proj input at the edit layer (intermediate MLP activations)
+    # For ROME, the key vector must be in the input space of the edited weight (c_proj).
+    # c_proj input has dimension d_ff (6400 for GPT-2-XL), not d_model (1600).
     captured = {}
 
     block = get_layer_module(model, edit_layer)
     mlp = block.mlp
 
+    # Hook into c_proj (the layer being edited) to capture its input
+    c_proj = mlp.c_proj if hasattr(mlp, "c_proj") else mlp.fc_out
+
     def hook_fn(module, input, output):
-        # input[0] is the hidden state going into the MLP
+        # input[0] is the intermediate activation going into c_proj (d_ff dimensional)
         captured["mlp_input"] = input[0].detach()
 
-    handle = mlp.register_forward_hook(hook_fn)
+    handle = c_proj.register_forward_hook(hook_fn)
 
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
     with torch.no_grad():
@@ -254,8 +268,14 @@ def _compute_target_value(
     at the subject's last token position with a trainable vector.
     """
     # Encode the full target sequence: prompt + target_new
+    # Use the full text encoding to find the correct token boundary,
+    # since encoding prompt alone vs. as part of full_text can differ.
     full_text = prompt + " " + target_new
-    target_ids = tokenizer.encode(target_new, add_special_tokens=False)
+    prompt_token_ids = tokenizer.encode(prompt, add_special_tokens=False)
+    full_token_ids = tokenizer.encode(full_text, add_special_tokens=False)
+    # Target tokens = full tokens after the prompt portion
+    # Find the boundary by encoding prompt separately and computing offset
+    target_ids = full_token_ids[len(prompt_token_ids):]
     if not target_ids:
         # Fallback: return the current W @ k_star as v_star (no-op edit)
         W = get_mlp_proj_param(model, edit_layer).detach().float()
@@ -307,9 +327,9 @@ def _compute_target_value(
         logits = outputs.logits
 
         # L_edit: cross-entropy loss for generating target_new tokens
-        # The target tokens start after the prompt tokens
-        prompt_len = len(tokenizer.encode(prompt, add_special_tokens=False))
-        target_logits = logits[0, prompt_len - 1:prompt_len - 1 + len(target_ids), :]
+        # The target tokens start after the prompt portion in the full encoding
+        prompt_boundary = len(prompt_token_ids)
+        target_logits = logits[0, prompt_boundary - 1:prompt_boundary - 1 + len(target_ids), :]
         target_tensor = torch.tensor(target_ids, device=device)
         loss_edit = F.cross_entropy(target_logits, target_tensor)
 
