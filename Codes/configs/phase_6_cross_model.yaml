@@ -1,0 +1,17 @@
+# Phase 6: Cross-Model Validation
+# GPT-J-6B replication
+
+_base_: "base.yaml"
+
+cross_model:
+  enabled: true
+  model_name: "EleutherAI/gpt-j-6b"
+  dtype: "float16"
+  num_facts: 100
+
+output:
+  results_dir: "_Results"
+  save_tensors: true
+  tensor_dir: "_Data"
+
+phases: [6]

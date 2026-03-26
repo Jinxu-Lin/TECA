@@ -1,0 +1,10 @@
+# Phase 1: Positive Control Experiments
+# ROME vs self, toy model, related facts
+
+_base_: "base.yaml"
+
+output:
+  results_dir: "_Results"
+  save_tensors: false
+
+phases: [1]

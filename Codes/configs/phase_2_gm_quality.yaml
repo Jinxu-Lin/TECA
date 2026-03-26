@@ -1,0 +1,11 @@
+# Phase 2: g_M Quality Analysis
+# Within/between similarity, PC1 removal, retrieval ablation
+
+_base_: "base.yaml"
+
+output:
+  results_dir: "_Results"
+  save_tensors: true
+  tensor_dir: "_Data"
+
+phases: [2]

@@ -1,0 +1,11 @@
+# Phase 3: Full-Scale Core Experiments
+# 200 facts, ROME + TDA + TECS + subspace geometry
+
+_base_: "base.yaml"
+
+output:
+  results_dir: "_Results"
+  save_tensors: true
+  tensor_dir: "_Data"
+
+phases: [3]

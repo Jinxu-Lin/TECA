@@ -1,0 +1,13 @@
+# Phase 0: Sanity Checks
+# ROME validation + gradient check + pipeline check
+
+_base_: "base.yaml"
+
+data:
+  num_facts: 10  # sanity check uses fewer facts
+
+output:
+  results_dir: "_Results"
+  save_tensors: false
+
+phases: [0]

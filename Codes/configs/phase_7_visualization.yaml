@@ -1,0 +1,9 @@
+# Phase 7: Visualization & Paper Figures
+
+_base_: "base.yaml"
+
+output:
+  results_dir: "_Results"
+  save_tensors: false
+
+phases: [7]

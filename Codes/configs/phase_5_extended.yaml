@@ -1,0 +1,11 @@
+# Phase 5: Extended Analyses
+# Whitening decomposition, MEMIT comparison
+
+_base_: "base.yaml"
+
+output:
+  results_dir: "_Results"
+  save_tensors: true
+  tensor_dir: "_Data"
+
+phases: [5]

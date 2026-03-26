@@ -1,0 +1,10 @@
+# Phase 4: Ablation Experiments
+# Top-k, weighting, loss function, scope
+
+_base_: "base.yaml"
+
+output:
+  results_dir: "_Results"
+  save_tensors: false
+
+phases: [4]

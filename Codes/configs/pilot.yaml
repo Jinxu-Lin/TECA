@@ -1,0 +1,26 @@
+# TECA Pilot Configuration
+# Quick verification: 50 facts, core analyses only
+
+_base_: "base.yaml"
+
+data:
+  num_facts: 50
+
+positive_control:
+  rome_self_num_facts: 50
+  related_facts_num: 50
+
+gm_quality:
+  retrieval_methods: ["bm25"]  # skip ablation methods in pilot
+
+ablation:
+  top_k_values: [5, 10, 20]  # fewer settings
+
+cross_model:
+  enabled: false
+
+output:
+  results_dir: "_Results/pilot"
+  save_tensors: false
+
+phases: [0, 1, 3]  # sanity + positive control + full-scale core
