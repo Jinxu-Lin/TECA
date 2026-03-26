@@ -1,3 +1,7 @@
+# Component: SVD Diagnostics
+# Source: research/method-design.md §3.2
+# Ablation config key: N/A (analysis only)
+
 """SVD projection diagnostics: assess spectral confound risk."""
 
 from __future__ import annotations
