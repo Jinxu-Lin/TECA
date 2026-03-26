@@ -1,9 +1,0 @@
-{"ts": 1773670067.575955, "event": "stage_start", "stage": "init", "iteration": 0, "action_type": "bash", "description": "项目初始化完成，推进到 literature_search 后再执行文献调研"}
-{"ts": 1773670076.65797, "event": "stage_end", "stage": "init", "iteration": 0, "duration_sec": 51.29633092880249, "score": null, "next_stage": "literature_search"}
-{"ts": 1773670081.896599, "event": "stage_start", "stage": "literature_search", "iteration": 0, "action_type": "skill", "description": "文献调研：arXiv 搜索 + Web 搜索，建立领域现状基础"}
-{"ts": 1773670516.1009102, "event": "stage_end", "stage": "literature_search", "iteration": 0, "duration_sec": 439.5068290233612, "score": null, "next_stage": "idea_debate"}
-{"ts": 1773670526.3694668, "event": "stage_start", "stage": "idea_debate", "iteration": 0, "action_type": "team", "description": "Agent Team: 6人辩论生成研究提案（恢复：已完成 0/6） + Codex 独立审查"}
-{"ts": 1773673009.609317, "event": "stage_end", "stage": "idea_debate", "iteration": 0, "duration_sec": 2493.5887989997864, "score": null, "next_stage": "planning"}
-{"ts": 1773673031.610872, "event": "stage_start", "stage": "planning", "iteration": 0, "action_type": "skill", "description": "Design experiment plan with pilot/full configs"}
-{"ts": 1773673253.012308, "event": "stage_end", "stage": "planning", "iteration": 0, "duration_sec": 243.47092509269714, "score": null, "next_stage": "pilot_experiments"}
-{"ts": 1773673311.017249, "event": "stage_start", "stage": "pilot_experiments", "iteration": 0, "action_type": "bash", "description": "实验任务被依赖阻塞"}
