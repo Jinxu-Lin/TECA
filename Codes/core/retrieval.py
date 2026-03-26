@@ -1,3 +1,7 @@
+# Component: BM25 Retrieval
+# Source: research/method-design.md §2.1, §8.2
+# Ablation config key: retrieval.method
+
 """Training sample retrieval: BM25 search over OpenWebText or CounterFact paraphrases."""
 
 from __future__ import annotations
