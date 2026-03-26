@@ -1,3 +1,7 @@
+# Component: Statistical Testing
+# Source: research/method-design.md §4
+# Ablation config key: N/A (always on)
+
 """Statistical analysis: paired t-tests, Cohen's d, and summary reporting."""
 
 from __future__ import annotations
@@ -60,7 +64,7 @@ def paired_t_test(
     ci_low = d - 1.96 * se_d
     ci_high = d + 1.96 * se_d
 
-    passed = (p_val < alpha) and (abs(d) >= min_cohens_d)
+    passed = bool((p_val < alpha) and (abs(d) >= min_cohens_d))
 
     return TestResult(
         test_name=test_name,
