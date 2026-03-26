@@ -1,3 +1,7 @@
+# Component: Gradient Computation
+# Source: research/method-design.md §2.1
+# Ablation config key: N/A (always on)
+
 """Gradient computation for TDA: compute per-sample gradients at a target layer."""
 
 from __future__ import annotations
