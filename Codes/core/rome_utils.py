@@ -1,3 +1,7 @@
+# Component: ROME Editing
+# Source: research/method-design.md §2, §3.6
+# Ablation config key: N/A (always on)
+
 """ROME editing utilities: self-contained rank-1 model editing.
 
 Implements the ROME algorithm (Meng et al., 2022) directly, without external
