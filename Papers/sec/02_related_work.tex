@@ -1,3 +1,30 @@
-\section{Related work}
+\section{Related Work}
 \label{sec:related_work}
 
+\paragraph{Knowledge Editing.}
+ROME \citep{meng2022locating} performs rank-one updates to MLP weight matrices at a critical layer, treating factual knowledge as key-value associations in a linear associative memory.
+MEMIT \citep{meng2022mass} extends this to multi-layer distributed editing.
+More recent approaches include PMET \citep{li2024pmet} and constrained fine-tuning \citep{zhu2020modifying}.
+Knowledge neurons \citep{dai2022knowledge} identify individual neurons associated with facts at a different granularity than our subspace-level analysis.
+These methods implicitly assume that edited parameter-space directions correspond to knowledge storage locations---an assumption the localization-editing disconnect \citep{hase2023does} calls into question.
+
+\paragraph{Training Data Attribution.}
+Influence functions \citep{koh2017understanding} approximate leave-one-out effects but scale poorly and exhibit fragility on deep networks \citep{basu2021influence}.
+TRAK \citep{park2023trak} projects gradients for tractability.
+\citet{wang2024influence} document failure modes on LLMs.
+MDA \citep{kwon2024mda} decomposes influence into subspace components, and RIF \citep{tang2025rif} shows accuracy depends critically on effective dimensionality.
+Rather than improving attribution, we characterize the geometric properties of attribution gradients relative to an independent knowledge probe (editing).
+
+\paragraph{Localization-Editing Disconnect.}
+\citet{hase2023does} demonstrated that knowledge localization does not reliably predict editing success.
+We address a related but distinct question: Hase et al.\ study whether localization predicts editing success (behavioral), while we study whether editing and attribution directions share geometric structure (geometric).
+Both findings point to different knowledge operations accessing different parameter-space structures.
+
+\paragraph{Parameter-Space Geometry.}
+Loss landscape analysis \citep{li2018visualizing}, mode connectivity \citep{draxler2018essentially,frankle2020linear}, probing \citep{hewitt2019structural}, and embedding geometry \citep{ethayarajh2019contextual} have yielded insights about neural network parameter spaces.
+However, the geometry of directions associated with specific knowledge operations has not been studied.
+
+\paragraph{Unified Knowledge Perspectives.}
+Recent surveys \citep{zhang2025unified} unify editing and attribution methodologically but not geometrically.
+MAGIC \citep{zhao2025magic} shows attribution quality varies with retrieval methods, motivating our attribution quality analysis.
+None examines whether parameter-space directions from different knowledge operations are geometrically commensurable.

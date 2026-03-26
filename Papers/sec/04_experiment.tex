@@ -1,3 +1,131 @@
 \section{Experiments}
 \label{sec:experiment}
 
+\subsection{Setup}
+\label{sec:setup}
+
+\paragraph{Model and dataset.}
+GPT-2-XL (1.5B parameters, 48 layers, $d_k = d_v = 1600$) with CounterFact \citep{meng2022locating}.
+%{{PENDING: full_scale_n | N=200 full-scale}}
+ROME edits at layer $l^* = 17$; MEMIT spans layers 13--17.
+All edits achieve $100\%$ efficacy (pilot, $N{=}100$).
+
+\paragraph{Attribution.}
+BM25 retrieval over WikiText/Wikipedia (proxy corpus; GPT-2 was trained on WebText) identifies the top-$K{=}20$ documents per fact.
+Per-sample gradients at $l^*$ in FP16; aggregated gradient $g_M$ is BM25-weighted and $\ell_2$-normalized.
+Full pipeline details in Appendix~\ref{app:attribution}.
+
+\paragraph{Statistics.}
+Cohen's $d$ with 10{,}000-iteration bootstrap 95\% CIs; Bonferroni correction ($\alpha = 0.01$); permutation tests (1000 trials) for subspace comparisons.
+Seed fixed at 42.
+Single NVIDIA RTX 4090 (24GB).
+
+\subsection{Core TECS Measurement}
+\label{sec:core_tecs}
+
+\begin{table}[t]
+\caption{Core TECS measurement against five null baselines (pilot, $N{=}100$). All comparisons Bonferroni-corrected. No comparison reaches significance.}
+\label{tab:tecs_core}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Comparison & Cohen's $d$ & 95\% CI & Significant? \\
+\midrule
+Real vs.\ Null-A (random-fact) & 0.050 & $[-0.117, 0.146]$ & No \\
+Real vs.\ Null-B (wrong-layer) & 0.078 & --- & No \\
+Real vs.\ Null-C (shuffled) & 0.024 & --- & No \\
+Real vs.\ Null-D (random-dir) & 0.022 & --- & No \\
+Real vs.\ Null-E (test-gradient) & 0.211 & --- & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+TECS is indistinguishable from all null baselines (Table~\ref{tab:tecs_core}): mean $= 1.57 \times 10^{-4}$, std $= 6.76 \times 10^{-3}$, 95\% bootstrap CI $[-1.17 \times 10^{-3}, 1.46 \times 10^{-3}]$.
+The positive/negative ratio is 56/44, consistent with symmetric noise.
+The primary effect size ($d = 0.050$ vs.\ Null-A) falls far below the pre-registered $d > 0.2$ threshold.
+%{{PENDING: full_scale_tecs | Full-scale results with 200 facts}}
+
+\subsection{Geometric Characterization}
+\label{sec:geometry}
+
+Having established that TECS detects no scalar alignment, we apply the six-component framework.
+We emphasize that all geometric properties below are measured under BM25-based attribution; Section~\ref{sec:gm_quality} examines sensitivity to attribution methods.
+
+\paragraph{Subspace dimensionality.}
+Editing and attribution exhibit a radical dimensionality asymmetry (Table~\ref{tab:subspace}).
+Editing directions span a ${\sim}40$-dimensional manifold with flat eigenvalue spectrum (condition number 2.0).
+Attribution gradients collapse to an effectively one-dimensional subspace (PC1 captures 91\%; $d_{\text{eff}} = 1.2$, condition number 33.2).
+This $34{:}1$ ratio reveals that ROME editing explores a rich parameter subspace while BM25-based attribution is dominated by a single shared direction.
+
+\begin{table}[t]
+\caption{Subspace geometry: effective dimensionality, condition number, and PC1 variance for editing and attribution direction matrices (pilot, $N{=}100$).}
+\label{tab:subspace}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Property & Editing ($\mathcal{S}_E$) & Attribution ($\mathcal{S}_A$) & Ratio \\
+\midrule
+Effective dimensionality & 40.8 & 1.2 & $34{:}1$ \\
+Condition number & 2.0 & 33.2 & --- \\
+PC1 variance fraction & --- & 91\% & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Principal angles.}
+At all subspace dimensions ($k \in \{10, 20, 50\}$), minimum principal angles are large ($>56^\circ$) and not significantly smaller than random subspace baselines ($p = 0.084$ at $k{=}10$; $p = 0.989$ at $k{=}20$; $p = 1.000$ at $k{=}50$).
+This establishes that the two subspaces are incommensurable---their geometric separation is at least as severe as random subspaces.
+The ``structured'' aspect comes from the dimensionality asymmetry and cross-projection pattern, not from the principal angles alone.
+
+\paragraph{Cross-projection asymmetry.}
+The overlap is markedly asymmetric: G-in-D $= 17.3\%$ (attribution variance partially captured by editing subspace), D-in-G $= 1.0\%$ (editing variance invisible from attribution subspace).
+The narrow attribution subspace marginally intersects the broad editing manifold, but the editing manifold's ${\sim}40$ dimensions are almost entirely invisible from attribution's single dominant direction.
+%{{PENDING: full_scale_geometry | Full-scale at 200 facts}}
+
+\subsection{Whitening Decomposition}
+\label{sec:whitening}
+
+We test whether ROME's $C^{-1}$ whitening causes the incommensurability.
+The unwhitened variant does not increase TECS ($d = -0.198$, $p = 0.051$).
+ROME's covariance rotation is not the source---the incommensurability is more fundamental than a statistical preprocessing artifact.
+
+\subsection{MEMIT Comparison}
+\label{sec:memit}
+
+MEMIT distributes edits across layers 13--17 (pilot, $N{=}30$, simplified implementation).
+Cross-layer TECS (layers 13--16 delta vs.\ layer 17 gradient) shows $d \approx 0.63$ (medium effect), while matched-layer TECS is trivially high ($d \gg 6.0$).
+Distributed editing partially bridges the incommensurability gap, suggesting the editing-attribution relationship is partially recoverable across layers.
+%{{PENDING: full_memit | Full MEMIT with proper covariance, 200 facts}}
+
+\subsection{Positive Control Experiments}
+\label{sec:positive_results}
+
+%{{PENDING: positive_control_self | Tier 1 self-alignment}}
+%{{PENDING: positive_control_toy | Tier 2 toy model: expected TECS > 0}}
+%{{PENDING: positive_control_related | Tier 3 related facts}}
+
+The positive controls are essential: if TECS is positive in the toy model (where theoretical conditions hold) but null in GPT-2-XL, the null result is informative about knowledge geometry rather than metric failure.
+
+\subsection{Attribution Quality Analysis}
+\label{sec:gm_quality}
+
+The attribution $d_{\text{eff}} = 1.2$ (PC1 $= 91\%$) raises a critical question: does the $34{:}1$ asymmetry reflect knowledge geometry or BM25 retrieval artifacts?
+
+%{{PENDING: gm_within_between | Within vs. between-fact gradient similarity}}
+%{{PENDING: gm_pc1_removal | PC1 removal: TECS and eff-dim on residual}}
+%{{PENDING: gm_retrieval_ablation | Retrieval ablation: BM25/TF-IDF/Contriever/uniform}}
+
+If $d_{\text{eff}}$ increases with better retrieval while TECS remains near zero, the incommensurability is robust.
+If TECS increases, the incommensurability is partially an attribution artifact.
+
+\subsection{Ablation Study}
+\label{sec:ablation}
+
+%{{PENDING: ablation | Four-axis ablation: top-k, weighting, loss, gradient scope}}
+
+\subsection{Cross-Model Validation}
+\label{sec:crossmodel}
+
+%{{PENDING: cross_model_gptj | GPT-J-6B: TECS, eff-dim, principal angles}}

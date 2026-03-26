@@ -1,5 +1,42 @@
 \appendix
 
-\section{Additional results}
+\section{Attribution Pipeline Details}
+\label{app:attribution}
+
+\paragraph{Corpus.}
+We use WikiText-103 and a Wikipedia dump as proxy training corpora for BM25 retrieval.
+We note that GPT-2 was trained on WebText (not WikiText); the retrieved documents are proxies for the actual training data.
+
+\paragraph{BM25 configuration.}
+We use \texttt{rank\_bm25} with default parameters ($k_1 = 1.5$, $b = 0.75$).
+For each fact $z = (s, r, o)$, we construct the query as the concatenation of subject $s$ and relation $r$ (e.g., ``The capital of France is'').
+Documents are segmented at the paragraph level with a minimum length of 50 tokens.
+
+\paragraph{Gradient computation.}
+Per-sample gradients $\nabla_{W^{(l^*)}} \mathcal{L}(x_i; \theta)$ are computed sequentially (one document at a time) in FP16 to manage memory.
+The loss $\mathcal{L}$ is the cross-entropy on the object token $o$ only.
+For multi-token objects, we use the loss on the first token.
+Each gradient has shape $d_v \times d_k = 1600 \times 1600 = 2{,}560{,}000$ parameters when flattened.
+
+\paragraph{Aggregation.}
+The top-$K = 20$ gradients are aggregated with BM25 weights and $\ell_2$-normalized: $g_M = \sum_i w_i g_i / \|\sum_i w_i g_i\|$.
+
+\section{Rank-One Decomposition Derivation}
+\label{app:decomposition}
+
+The ROME update (Eq.~\ref{eq:rome}) can be written as $\Delta W_E = \alpha \cdot (v^* - Wk^*)(C^{-1}k^*)^\top$ where $\alpha = 1/((C^{-1}k^*)^\top k^*)$.
+This is a rank-one outer product.
+The vectorized form is $\operatorname{vec}(\Delta W_E) = \alpha \cdot (C^{-1}k^*) \otimes (v^* - Wk^*)$.
+
+For a single-sample gradient $g_i = \nabla_W \mathcal{L}(x_i) = k_i \otimes \delta_{v,i}$ (under the linear memory approximation), the cosine similarity becomes:
+\[
+\cos(\operatorname{vec}(\Delta W_E), g_i) = \operatorname{sign}(\alpha) \cdot \cos(C^{-1}k^*, k_i) \cdot \cos(v^* - Wk^*, \delta_{v,i})
+\]
+
+The noise floor follows from concentration of measure: for independent random vectors in $\mathbb{R}^{d_k}$, $\mathbb{E}[\cos^2(a, b)] = 1/d_k$.
+The SNR prediction follows from assuming $\rho_k = \mathbb{E}[\cos(C^{-1}k^*, k_i)]$ and $\rho_v = \mathbb{E}[\cos(v^* - Wk^*, \delta_{v,i})]$ are small but nonzero, giving expected signal $\sim \rho_k \rho_v$ against noise $\sim 1/\sqrt{d_k}$.
+
+\section{Additional Results}
 \label{app:additional_results}
 
+%{{PENDING: additional results tables and figures}}

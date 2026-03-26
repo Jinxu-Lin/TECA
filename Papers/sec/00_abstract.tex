@@ -1,3 +1,10 @@
 \begin{abstract}
-
+Knowledge editing and training data attribution both operate on transformer MLP weight matrices to probe factual knowledge, yet whether their parameter-space directions share geometric structure is unknown.
+We introduce TECS (TDA-Editing Consistency Score), a cosine similarity metric between ROME's rank-one editing updates and aggregated attribution gradients, and apply it to GPT-2-XL across %
+%{{PENDING: abstract_n_facts | number of CounterFact facts | 200}}
+CounterFact facts with five null baselines and Bonferroni correction.
+TECS is indistinguishable from noise (Cohen's $d = 0.050$), but a six-component geometric analysis reveals this null result arises from structured incommensurability: editing directions span a ${\sim}40$-dimensional manifold while attribution gradients collapse to an effectively one-dimensional subspace ($34{:}1$ dimensionality ratio), with asymmetric cross-projection ($17.3\%$ vs.\ $1.0\%$) and principal angles comparable to random baselines.
+A theoretical rank-one decomposition predicts that even weak correlations should produce detectable signal under the linear associative memory model, constraining how severely these assumptions fail in practice.
+%{{PENDING: abstract_positive_control | Positive control results}}
+These findings provide a parameter-level perspective on the localization-editing disconnect and establish that, under current attribution methods, different knowledge operations access geometrically distinct structures in the same parameter space.
 \end{abstract}

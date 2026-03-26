@@ -1,0 +1,4 @@
+{
+  "outcome": "done",
+  "notes": "P4 integration complete. Addressed all rewrite-fixable P3 issues: conditional claims on BM25, reduced contributions to 3, fixed decomposition gap, clarified principal angle interpretation, standardized 34:1 ratio, added figure references, added proxy corpus note. needs-additional-experiments items tagged as PENDING. Full paper assembled in paper.md, notation.md created."
+}

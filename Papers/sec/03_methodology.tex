@@ -1,3 +1,88 @@
 \section{Methodology}
 \label{sec:methodology}
 
+\subsection{Problem Formulation}
+\label{sec:problem}
+
+We study the geometric relationship between two independent probes of factual knowledge in transformer MLP parameter space.
+Given a transformer with $L$ layers, each containing an MLP with weight matrix $W^{(l)} \in \mathbb{R}^{d_v \times d_k}$, and a factual association $z = (s, r, o)$, knowledge editing (ROME) produces a rank-one weight update $\Delta W_E \in \mathbb{R}^{d_v \times d_k}$ at a critical layer $l^*$, while training data attribution produces an aggregated gradient $g_M \in \mathbb{R}^{d_v \times d_k}$ at the same layer.
+We characterize their geometric relationship through TECS and a six-component analysis framework.
+
+\subsection{TECS: TDA-Editing Consistency Score}
+\label{sec:tecs}
+
+For a factual association $z$ edited at layer $l^*$, we define:
+\begin{equation}
+\text{TECS}(z) = \cos\!\bigl(\operatorname{vec}(\Delta W_E),\; \operatorname{vec}(g_M)\bigr)
+\label{eq:tecs}
+\end{equation}
+where $\operatorname{vec}(\cdot)$ flattens a matrix into a vector.
+
+\paragraph{Editing direction.} ROME computes the rank-one update:
+\begin{equation}
+\Delta W_E = \frac{(v^* - W^{(l^*)} k^*) \, (C^{-1} k^*)^\top}{(C^{-1} k^*)^\top k^*}
+\label{eq:rome}
+\end{equation}
+where $k^* \in \mathbb{R}^{d_k}$ is the subject's key representation, $v^* \in \mathbb{R}^{d_v}$ is the target value, and $C = \mathbb{E}[k k^\top]$ is the key covariance matrix estimated from a reference corpus.
+
+\paragraph{Attribution direction.} We compute:
+\begin{equation}
+g_M(z) = \frac{\sum_{i \in \text{top-}K} w_i \cdot \nabla_{W^{(l^*)}} \mathcal{L}(x_i; \theta)}{\bigl\|\sum_{i \in \text{top-}K} w_i \cdot \nabla_{W^{(l^*)}} \mathcal{L}(x_i; \theta)\bigr\|}
+\label{eq:attribution}
+\end{equation}
+where $\{x_i\}_{i \in \text{top-}K}$ are proxy training documents retrieved via BM25, $w_i$ are relevance weights, and $\mathcal{L}$ is the cross-entropy loss on the object token.
+
+\subsection{Theoretical Foundation: Rank-One Decomposition}
+\label{sec:theory}
+
+Under the linear associative memory model ($Wk = v$), for a single training sample $z_i$, substituting Eq.~\ref{eq:rome} into Eq.~\ref{eq:tecs} yields:
+\begin{equation}
+\text{TECS}(z_i) = \operatorname{sign}(\alpha) \cdot \cos(C^{-1}k^*,\; k_i) \cdot \cos(v^* - Wk^*,\; \delta_{v,i})
+\label{eq:decomp}
+\end{equation}
+decomposing TECS into key-space alignment times value-space alignment.
+This per-sample decomposition does not directly apply to the aggregated metric (Eq.~\ref{eq:attribution}), but yields two analytical predictions.
+First, $\mathbb{E}[\text{TECS}_{\text{random}}^2] \sim 1/d_k$ establishes the noise floor.
+Second, $\text{SNR} \sim \rho_k \cdot \rho_v \cdot \sqrt{d_k}$, where $\rho_k, \rho_v$ measure average key- and value-space correlations.
+For GPT-2-XL ($d_k = 1600$), even $\rho_k \cdot \rho_v > 0.08$ should produce Cohen's $d > 0.3$.
+
+\subsection{Null Baselines}
+\label{sec:null}
+
+We employ five null baselines: \textbf{Null-A} (random-fact TECS), \textbf{Null-B} (wrong-layer, $l^* \pm 5$), \textbf{Null-C} (shuffled gradient), \textbf{Null-D} (random direction), and \textbf{Null-E} (test-set gradient).
+All comparisons use Cohen's $d$ with 10{,}000-iteration bootstrap 95\% CIs and Bonferroni correction ($\alpha = 0.01$).
+
+\subsection{Six-Component Geometric Analysis}
+\label{sec:framework}
+
+When TECS fails to detect alignment, we characterize the geometry of incommensurability through six components.
+
+\paragraph{Component 1: Subspace dimensionality.} Effective dimensionality via eigenvalue entropy:
+\begin{equation}
+d_{\text{eff}} = \exp\!\Bigl(-\sum_i p_i \log p_i\Bigr), \quad p_i = \frac{\sigma_i^2}{\sum_j \sigma_j^2}
+\label{eq:effdim}
+\end{equation}
+where $\{\sigma_i\}$ are singular values from the SVD of the stacked direction matrix.
+
+\paragraph{Component 2: Principal angles.} We compute principal angles between subspaces $\mathcal{S}_E = \operatorname{span}(\Delta W_1, \ldots, \Delta W_N)$ and $\mathcal{S}_A = \operatorname{span}(g_1, \ldots, g_N)$ at dimensions $k \in \{10, 20, 50\}$, compared against 1000 random subspace trials.
+
+\paragraph{Component 3: Cross-projection.} Asymmetric overlap via:
+\begin{equation}
+\text{G-in-D} = \frac{\|P_{\mathcal{S}_E} G\|_F^2}{\|G\|_F^2}, \quad
+\text{D-in-G} = \frac{\|P_{\mathcal{S}_A} D\|_F^2}{\|D\|_F^2}
+\label{eq:crossproj}
+\end{equation}
+
+\paragraph{Component 4: Whitening decomposition.} We compare standard TECS (with $C^{-1}$) against an unwhitened variant to test whether ROME's statistical whitening causes the incommensurability.
+
+\paragraph{Component 5: Multi-method comparison.} MEMIT distributes edits across layers $l^*{-}4$ through $l^*$. We measure both within-layer and cross-layer TECS.
+
+\paragraph{Component 6: Attribution quality.} We assess $g_M$ quality through within-fact vs.\ between-fact gradient similarity, retrieval method ablation (BM25, TF-IDF, dense retrieval), and PC1 removal analysis.
+
+\subsection{Positive Control Experiments}
+\label{sec:positive}
+
+\textbf{Tier~1} (self-alignment): TECS between a ROME direction and its noisy copy at varying noise levels.
+\textbf{Tier~2} (toy model): A 3-layer MLP ($d{=}64$, ReLU) trained on 200 synthetic key-value pairs, with ROME-style edits and exact gradients.
+If TECS is positive here but null in GPT-2-XL, the null result is informative about knowledge geometry rather than metric failure.
+\textbf{Tier~3} (related facts): Cross-fact TECS within vs.\ across relation types.

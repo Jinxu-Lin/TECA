@@ -1,3 +1,17 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
+We presented the first systematic geometric characterization of the relationship between knowledge editing directions and training data attribution gradients in transformer MLP parameter space.
+Through the TECS metric and a six-component geometric analysis framework, we found that under BM25-based attribution, these two knowledge operations occupy structurally incommensurable subspaces: editing directions span a ${\sim}40$-dimensional manifold while attribution gradients collapse to an effectively one-dimensional subspace, creating a $34{:}1$ dimensionality asymmetry with large principal angles and asymmetric cross-projection (G-in-D $= 17.3\%$, D-in-G $= 1.0\%$).
+This structured incommensurability provides a parameter-level perspective on the localization-editing disconnect \citep{hase2023does} and constrains how severely the linear associative memory assumptions underlying ROME must fail in practice.
+%{{PENDING: conclusion_full_scale | Full-scale confirmation}}
+
+\paragraph{Limitations.}
+Our analysis has three primary limitations.
+First, we focus on a single MLP layer ($l^* = 17$); knowledge may be distributed across layers, though the MEMIT analysis partially addresses this.
+Second, the attribution pipeline relies on BM25 retrieval over a proxy corpus (WikiText), which may artificially constrain attribution dimensionality---our attribution quality analysis directly tests this confound.
+Third, we study GPT-2-XL as the primary model.
+%{{PENDING: limitation_cross_model | Cross-model status}}
+
+\paragraph{Future work.}
+Three directions extend this work: (1) representation-space TECS (hidden state alignment rather than parameter space); (2) applying the positive control methodology to other cross-paradigm comparisons in interpretability; (3) designing attribution methods that match the geometric structure of editing directions.

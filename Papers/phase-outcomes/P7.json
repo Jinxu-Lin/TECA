@@ -1,0 +1,4 @@
+{
+  "outcome": "done",
+  "notes": "Project review complete. Critic attack strength 6/10, Supervisor quality 7/10. Submission recommendation: complete PENDING experiments (positive control, g_M ablation, full-scale, cross-model) then /praxis-paper-fill. Key consensus issue: BM25 degeneracy confound. Proxy metric gaming: Pass."
+}
