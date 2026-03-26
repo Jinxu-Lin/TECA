@@ -1,0 +1,96 @@
+{
+  "config_summary": "model=gpt2-xl, n_facts=50, phases=[0, 1, 3], retrieval=bm25, seed=42",
+  "dry_run": true,
+  "phases": {
+    "0": {
+      "phase": 0,
+      "name": "Sanity Checks",
+      "checks": {
+        "rome_validation": {
+          "status": "dry_run",
+          "num_facts": 10,
+          "model": "gpt2-xl"
+        },
+        "gradient_check": {
+          "status": "dry_run",
+          "num_facts": 10
+        },
+        "tecs_pipeline": {
+          "status": "dry_run",
+          "num_facts": 10
+        }
+      },
+      "status": "dry_run_ok"
+    },
+    "1": {
+      "phase": 1,
+      "name": "Positive Control Experiments",
+      "experiments": {
+        "rome_self": {
+          "status": "dry_run",
+          "sigmas": [
+            0.0,
+            0.01,
+            0.1,
+            0.5,
+            1.0
+          ],
+          "num_facts": 50
+        },
+        "toy_model": {
+          "status": "dry_run",
+          "d": 64,
+          "n_pairs": 200
+        },
+        "related_facts": {
+          "status": "dry_run",
+          "num_facts": 50
+        }
+      },
+      "status": "dry_run_ok"
+    },
+    "3": {
+      "phase": 3,
+      "name": "Full-Scale Core Experiments",
+      "experiments": {
+        "rome_editing": {
+          "status": "dry_run",
+          "num_facts": 50
+        },
+        "tda_gradients": {
+          "status": "dry_run",
+          "num_facts": 50,
+          "top_k": 10
+        },
+        "tecs_core": {
+          "status": "dry_run",
+          "num_facts": 50,
+          "null_baselines": [
+            "null_a",
+            "null_b",
+            "null_c",
+            "null_d",
+            "null_e"
+          ],
+          "bootstrap_n": 10000
+        },
+        "subspace_geometry": {
+          "status": "dry_run",
+          "num_facts": 50,
+          "analyses": [
+            "eff_dim",
+            "principal_angles",
+            "cross_projection"
+          ]
+        }
+      },
+      "status": "dry_run_ok"
+    }
+  },
+  "timing": {
+    "0": 0.0,
+    "1": 0.0,
+    "3": 0.0
+  },
+  "total_time_seconds": 0.0
+}

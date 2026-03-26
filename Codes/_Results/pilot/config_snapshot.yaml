@@ -1,0 +1,81 @@
+model:
+  name: gpt2-xl
+  device: cuda
+  dtype: float32
+  edit_layer: null
+rome:
+  v_lr: 0.5
+  v_num_grad_steps: 20
+  clamp_norm_factor: 4.0
+  kl_factor: 0.0625
+data:
+  dataset: counterfact
+  counterfact_path: data/counterfact.json
+  num_facts: 50
+  seed: 42
+retrieval:
+  method: bm25
+  corpus: openwebtext
+  max_docs: 500000
+  top_k_candidates: 100
+  top_k_gradient: 10
+  index_path: null
+null_baselines:
+  null_a_num: 10
+  placebo_offsets:
+  - -5
+  - 5
+statistics:
+  alpha: 0.05
+  min_cohens_d: 0.5
+  min_tecs_mean: 0.05
+  angular_kill_threshold: 0.001
+  bootstrap_n: 10000
+output:
+  results_dir: _Results/pilot
+  save_tensors: false
+  tensor_dir: _Data
+phases:
+- 0
+- 1
+- 3
+seed: 42
+positive_control:
+  rome_self_sigmas:
+  - 0.0
+  - 0.01
+  - 0.1
+  - 0.5
+  - 1.0
+  rome_self_num_facts: 50
+  toy_model_d: 64
+  toy_model_n_pairs: 200
+  toy_model_n_layers: 3
+  related_facts_num: 50
+gm_quality:
+  within_between_top_k: 20
+  pc1_removal: true
+  retrieval_methods:
+  - bm25
+ablation:
+  top_k_values:
+  - 5
+  - 10
+  - 20
+  weighting_methods:
+  - bm25
+  - uniform
+  - tfidf
+  loss_functions:
+  - object_token_ce
+  - full_sequence_ce
+  - margin
+  scope_configs:
+  - single_layer
+  - multi_layer
+  multi_layer_range: 2
+cross_model:
+  enabled: false
+  model_name: EleutherAI/gpt-j-6b
+  dtype: float16
+  num_facts: 100
