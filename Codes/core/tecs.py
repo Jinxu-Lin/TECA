@@ -1,3 +1,7 @@
+# Component: TECS Core Metric
+# Source: research/method-design.md §2
+# Ablation config key: N/A (always on)
+
 """TECS (TDA-Editing Consistency Score) computation and null baselines."""
 
 from __future__ import annotations
