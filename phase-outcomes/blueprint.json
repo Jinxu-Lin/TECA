@@ -1,0 +1,4 @@
+{
+  "outcome": "done",
+  "notes": "Blueprint complete. experiment-todo.md covers 7 phases (sanity, positive control, g_M quality, full-scale, ablation, extended, cross-model). Code architecture maps all method components to files. Design review MUST-ADDRESS items (positive control + g_M quality analysis) incorporated as P0 priorities. Total estimated GPU time: ~10 hours on 1xRTX 4090."
+}

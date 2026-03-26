@@ -1,0 +1,86 @@
+{
+  "completed": ["setup_env", "phase1_rome_validation", "phase2_tda_gradient", "negative_subspace_geometry", "negative_memit"],
+  "failed": [],
+  "running": {},
+  "timings": {
+    "setup_env": {
+      "planned_min": 15,
+      "actual_min": 12,
+      "start_time": "2026-03-17T02:05:00",
+      "end_time": "2026-03-17T02:22:00",
+      "config_snapshot": {
+        "conda_env": "sibyl_TECA",
+        "python": "3.10",
+        "torch": "2.5.1+cu121",
+        "transformers": "4.45.2",
+        "easyedit_commit": "4193763",
+        "gpu_model": "RTX 4090"
+      }
+    },
+    "phase1_rome_validation": {
+      "planned_min": 20,
+      "actual_min": 32,
+      "start_time": "2026-03-17T15:03:00",
+      "end_time": "2026-03-17T15:35:00",
+      "config_snapshot": {
+        "model": "gpt2-xl",
+        "dtype": "float16",
+        "batch_size": 1,
+        "n_samples": 100,
+        "edit_layer": 17,
+        "v_num_grad_steps": 20,
+        "gpu_model": "RTX 4090",
+        "gpu_count": 1,
+        "gpu_vram_free_mb": 9000
+      }
+    },
+    "phase2_tda_gradient": {
+      "planned_min": 25,
+      "actual_min": 4,
+      "start_time": "2026-03-17T15:52:50",
+      "end_time": "2026-03-17T15:56:46",
+      "config_snapshot": {
+        "model": "gpt2-xl",
+        "dtype": "float16",
+        "n_samples": 100,
+        "top_k_gradient": 20,
+        "max_seq_len": 512,
+        "layer": 17,
+        "gpu_model": "RTX 4090",
+        "gpu_count": 1
+      }
+    },
+    "negative_subspace_geometry": {
+      "planned_min": 15,
+      "actual_min": 4,
+      "start_time": "2026-03-17T21:01:05",
+      "end_time": "2026-03-17T21:05:20",
+      "config_snapshot": {
+        "n_facts": 100,
+        "original_dim": 10240000,
+        "reduced_dim": 199,
+        "k_values": [10, 20, 50],
+        "n_random_trials": 1000,
+        "device": "cpu",
+        "gpu_model": "RTX 4090",
+        "gpu_count": 0
+      }
+    },
+    "negative_memit": {
+      "planned_min": 25,
+      "actual_min": 1,
+      "start_time": "2026-03-17T22:14:29",
+      "end_time": "2026-03-17T22:14:53",
+      "config_snapshot": {
+        "model": "gpt2-xl",
+        "dtype": "float16",
+        "n_facts": 30,
+        "memit_layers": [13, 14, 15, 16, 17],
+        "method": "simplified_memit_identity_cov",
+        "gpu_model": "RTX 4090",
+        "gpu_count": 1,
+        "note": "Shared GPU (other process using 15GB); used simplified MEMIT without mom2 stats"
+      }
+    }
+  }
+}

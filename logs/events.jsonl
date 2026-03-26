@@ -5,3 +5,5 @@
 {"ts": 1773670526.3694668, "event": "stage_start", "stage": "idea_debate", "iteration": 0, "action_type": "team", "description": "Agent Team: 6人辩论生成研究提案（恢复：已完成 0/6） + Codex 独立审查"}
 {"ts": 1773673009.609317, "event": "stage_end", "stage": "idea_debate", "iteration": 0, "duration_sec": 2493.5887989997864, "score": null, "next_stage": "planning"}
 {"ts": 1773673031.610872, "event": "stage_start", "stage": "planning", "iteration": 0, "action_type": "skill", "description": "Design experiment plan with pilot/full configs"}
+{"ts": 1773673253.012308, "event": "stage_end", "stage": "planning", "iteration": 0, "duration_sec": 243.47092509269714, "score": null, "next_stage": "pilot_experiments"}
+{"ts": 1773673311.017249, "event": "stage_start", "stage": "pilot_experiments", "iteration": 0, "action_type": "bash", "description": "实验任务被依赖阻塞"}
