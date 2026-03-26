@@ -1,3 +1,7 @@
+# Component: Model Utilities
+# Source: research/method-design.md §2
+# Ablation config key: N/A (infrastructure)
+
 """Model loading and layer access utilities for GPT-2 family models."""
 
 import torch
