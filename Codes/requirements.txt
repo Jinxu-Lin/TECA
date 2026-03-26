@@ -1,0 +1,7 @@
+torch>=2.0
+transformers>=4.35
+datasets>=2.14
+scipy>=1.10
+numpy>=1.24
+rank-bm25>=0.2.2
+pyyaml>=6.0

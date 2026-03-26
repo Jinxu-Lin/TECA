@@ -1,0 +1,4 @@
+{
+  "outcome": "done",
+  "notes": "RS-Revise-2 完成：(1) 增加 RepSim 竞争路径对比并说明 TECS 的参数空间独特价值；(2) 明确降级后核心科学问题锚点——参数空间知识几何学；(3) 探针增加 SVD 投影前置诊断和方案 B sanity check；(4) 补充 DATE-LM task-based evaluation 层面区分。"
+}
