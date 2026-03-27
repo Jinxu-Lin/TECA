@@ -45,7 +45,7 @@ def run_svd_diagnostic(
 
     # 2. Load facts
     print(f"\n[2/3] Loading {num_facts} facts...")
-    facts = load_counterfact(num_facts=num_facts, seed=123)
+    facts = load_counterfact(num_facts=num_facts, seed=42)
 
     # 3. For each fact: ROME edit, gradient, SVD diagnostic
     print(f"\n[3/3] Running SVD diagnostic (top-{top_k_sv} singular vectors)...")

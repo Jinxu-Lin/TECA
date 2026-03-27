@@ -55,6 +55,7 @@ def set_global_seed(seed: int) -> None:
             torch.cuda.manual_seed_all(seed)
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True, warn_only=True)
     except ImportError:
         pass
 
@@ -498,11 +499,13 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         "edit_layer": edit_layer,
     }
 
-    # TDA gradients + TECS
+    # TDA gradients + TECS + all 5 null baselines
     print(f"  Computing TDA gradients and TECS...")
+    import torch as _torch
     tecs_data = []
     top_k_grad = cfg["retrieval"]["top_k_gradient"]
     null_a_num = cfg["null_baselines"]["null_a_num"]
+    placebo_offsets = cfg["null_baselines"].get("placebo_layer_offsets", [-5, 5])
 
     for i, fact in enumerate(facts):
         query = f"{fact['subject']} {fact['target_old']}"
@@ -511,28 +514,72 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
             corpus_name=cfg["retrieval"]["corpus"],
             index_path=cfg["retrieval"].get("index_path"),
         )
-        sample_texts = [c["text"][:512] for c in candidates[:top_k_grad]]
-        agg_grad = compute_aggregated_gradient(
-            model, tokenizer, fact["prompt"], sample_texts, edit_layer, device, top_k=top_k_grad,
-        )
+        top_candidates = candidates[:top_k_grad]
+        sample_texts = [c["text"][:512] for c in top_candidates]
+        bm25_scores = [c.get("score", 1.0) for c in top_candidates]
+
+        # Compute per-sample gradients ONCE, reuse for aggregation + angular variance
         per_grads = compute_per_sample_gradients(
             model, tokenizer, sample_texts, edit_layer, device,
         )
         ang_var = compute_angular_variance(per_grads)
 
+        # BM25-weighted aggregation
+        agg_grad = compute_aggregated_gradient(
+            model, tokenizer, fact["prompt"], sample_texts, edit_layer, device,
+            top_k=top_k_grad, weights=bm25_scores,
+        )
+
         er = edit_results[i]
         tecs_real = compute_tecs(er.delta_weight, agg_grad)
 
-        # Null-A
+        # Null-A: TECS with unrelated facts' edit directions
         unrelated = [j for j in range(num_facts) if j != i]
         rng = random.Random(42 + i)
         null_indices = rng.sample(unrelated, min(null_a_num, len(unrelated)))
         null_a_vals = compute_null_a(agg_grad, [edit_results[j].delta_weight for j in null_indices])
 
+        # Null-B: TECS at wrong layers (l* +/- offset)
+        null_b_vals = {}
+        for offset in placebo_offsets:
+            wrong_layer = edit_layer + offset
+            if 0 <= wrong_layer < 48:  # GPT-2-XL has 48 layers
+                grad_wrong = compute_aggregated_gradient(
+                    model, tokenizer, fact["prompt"], sample_texts,
+                    wrong_layer, device, top_k=top_k_grad, weights=bm25_scores,
+                )
+                er_wrong = compute_rome_edit(
+                    model, tokenizer,
+                    subject=fact["subject"], prompt=fact["prompt"],
+                    target_new=fact["target_new"], target_old=fact["target_old"],
+                    edit_layer=wrong_layer, device=device,
+                )
+                null_b_vals[offset] = compute_tecs(er_wrong.delta_weight, grad_wrong)
+
+        # Null-C: TECS with shuffled gradient (permute elements)
+        grad_flat = agg_grad.reshape(-1)
+        perm_idx = _torch.randperm(grad_flat.numel(), generator=_torch.Generator().manual_seed(42 + i))
+        shuffled_grad = grad_flat[perm_idx].reshape(agg_grad.shape)
+        null_c_val = compute_tecs(er.delta_weight, shuffled_grad)
+
+        # Null-D: TECS with random direction (same shape as delta)
+        rand_gen = _torch.Generator().manual_seed(42 + i)
+        random_delta = _torch.randn(er.delta_weight.shape, generator=rand_gen)
+        null_d_val = compute_tecs(random_delta, agg_grad)
+
+        # Null-E: TECS with test prompt gradient (instead of training samples)
+        from core.gradient_utils import compute_gradient_at_layer
+        test_grad = compute_gradient_at_layer(model, tokenizer, fact["prompt"], edit_layer, device)
+        null_e_val = compute_tecs(er.delta_weight, test_grad)
+
         tecs_data.append({
             "fact_idx": i,
             "tecs_real": tecs_real,
             "tecs_null_a_mean": float(np.mean(null_a_vals)),
+            "tecs_null_b": null_b_vals,
+            "tecs_null_c": null_c_val,
+            "tecs_null_d": null_d_val,
+            "tecs_null_e": null_e_val,
             "angular_variance": ang_var,
             "edit_success": er.edit_success,
         })
@@ -540,19 +587,36 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         if (i + 1) % 20 == 0:
             print(f"    [{i+1}/{num_facts}] TECS computed")
 
-    # Statistical test
+    # Statistical tests for all null baselines
     real_vals = [d["tecs_real"] for d in tecs_data]
-    null_vals = [d["tecs_null_a_mean"] for d in tecs_data]
-    test = paired_t_test(real_vals, null_vals, test_name="TECS(real) vs Null-A")
+    null_a_means = [d["tecs_null_a_mean"] for d in tecs_data]
+    null_c_vals = [d["tecs_null_c"] for d in tecs_data]
+    null_d_vals = [d["tecs_null_d"] for d in tecs_data]
+    null_e_vals = [d["tecs_null_e"] for d in tecs_data]
+
+    test_a = paired_t_test(real_vals, null_a_means, test_name="TECS(real) vs Null-A")
+    test_c = paired_t_test(real_vals, null_c_vals, test_name="TECS(real) vs Null-C")
+    test_d = paired_t_test(real_vals, null_d_vals, test_name="TECS(real) vs Null-D")
+    test_e = paired_t_test(real_vals, null_e_vals, test_name="TECS(real) vs Null-E")
 
     results["experiments"]["tecs_core"] = {
         "status": "completed",
         "per_fact": tecs_data,
-        "cohens_d": test.cohens_d,
-        "p_value": test.p_value,
-        "ci": [test.ci_low, test.ci_high],
-        "mean_tecs_real": test.mean_real,
-        "mean_tecs_null": test.mean_null,
+        "tests": {
+            "vs_null_a": {"cohens_d": test_a.cohens_d, "p_value": test_a.p_value,
+                          "ci": [test_a.ci_low, test_a.ci_high]},
+            "vs_null_c": {"cohens_d": test_c.cohens_d, "p_value": test_c.p_value,
+                          "ci": [test_c.ci_low, test_c.ci_high]},
+            "vs_null_d": {"cohens_d": test_d.cohens_d, "p_value": test_d.p_value,
+                          "ci": [test_d.ci_low, test_d.ci_high]},
+            "vs_null_e": {"cohens_d": test_e.cohens_d, "p_value": test_e.p_value,
+                          "ci": [test_e.ci_low, test_e.ci_high]},
+        },
+        "cohens_d": test_a.cohens_d,
+        "p_value": test_a.p_value,
+        "ci": [test_a.ci_low, test_a.ci_high],
+        "mean_tecs_real": test_a.mean_real,
+        "mean_tecs_null": test_a.mean_null,
     }
 
     results["status"] = "completed"

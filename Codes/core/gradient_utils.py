@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
@@ -57,17 +57,12 @@ def compute_aggregated_gradient(
     layer_idx: int,
     device: str = "cuda",
     top_k: int = 10,
+    weights: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    """Compute the aggregated TDA gradient g_M = (1/k) sum_i g_i for top-k training samples.
+    """Compute the aggregated TDA gradient g_M = sum_i w_i * g_i / sum(w_i).
 
     Each g_i = gradient of L(theta; x_i) w.r.t. the edit layer weight, where x_i is a
-    training sample. This represents "which direction in parameter space did these
-    training samples push the model during training" -- the raw gradient TDA
-    approximation.
-
-    The aggregated gradient g_M is then compared with the ROME edit direction
-    delta_theta to compute TECS. If the training samples that mention the fact
-    pushed the model in the same direction as the ROME edit, TECS will be positive.
+    training sample. Weights w_i are typically BM25 retrieval scores.
 
     Args:
         model: The model.
@@ -77,23 +72,29 @@ def compute_aggregated_gradient(
         layer_idx: The layer to compute gradients at.
         device: Device string.
         top_k: Maximum number of training samples to use.
+        weights: Per-sample weights (e.g. BM25 scores). If None, uses uniform.
 
     Returns:
         Aggregated gradient tensor (same shape as weight matrix), on CPU.
     """
     if not training_texts:
-        # Fallback: if no training samples provided, use test prompt gradient
         return compute_gradient_at_layer(model, tokenizer, test_prompt, layer_idx, device)
 
-    # Compute per-training-sample gradients
     texts_to_use = training_texts[:top_k]
     grads = compute_per_sample_gradients(model, tokenizer, texts_to_use, layer_idx, device)
 
     if not grads:
         return compute_gradient_at_layer(model, tokenizer, test_prompt, layer_idx, device)
 
-    # Aggregate: mean of training sample gradients
-    aggregated = torch.stack(grads, dim=0).mean(dim=0)
+    # Weighted aggregation (BM25 scores or uniform)
+    if weights is not None:
+        w = torch.tensor(weights[:len(grads)], dtype=torch.float32)
+        w = w / w.sum()  # normalize to sum to 1
+        stacked = torch.stack(grads, dim=0)  # [k, *shape]
+        aggregated = (stacked * w.view(-1, *([1] * (stacked.dim() - 1)))).sum(dim=0)
+    else:
+        aggregated = torch.stack(grads, dim=0).mean(dim=0)
+
     return aggregated
 
 

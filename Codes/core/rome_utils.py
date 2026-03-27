@@ -292,7 +292,7 @@ def _compute_target_value(
     captured_output = {}
 
     prompt_ids_list = tokenizer.encode(prompt, add_special_tokens=False)
-    subject_end_pos = len(prompt_ids_list) - 1  # Use last prompt token as edit site
+    edit_site_pos = len(prompt_ids_list) - 1  # Last prompt token as edit site
 
     def capture_hook(module, input, output):
         captured_output["value"] = output.detach().clone()
@@ -304,7 +304,7 @@ def _compute_target_value(
     handle.remove()
 
     # Initialize v as the current MLP output at the edit site
-    current_v = captured_output["value"][0, subject_end_pos, :].clone()
+    current_v = captured_output["value"][0, edit_site_pos, :].clone()
     v_opt = current_v.clone().requires_grad_(True)
 
     optimizer = torch.optim.Adam([v_opt], lr=lr)
@@ -321,7 +321,7 @@ def _compute_target_value(
         # Hook that replaces the MLP output at the edit position with v_opt
         def edit_hook(module, input, output):
             out = output.clone()
-            out[0, subject_end_pos, :] = v_opt
+            out[0, edit_site_pos, :] = v_opt
             return out
 
         handle = mlp.register_forward_hook(edit_hook)

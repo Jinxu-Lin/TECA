@@ -37,6 +37,8 @@ def paired_t_test(
     alpha: float = 0.05,
     min_cohens_d: float = 0.5,
     test_name: str = "TECS(real) vs TECS(null)",
+    bootstrap_n: int = 0,
+    bootstrap_seed: int = 42,
 ) -> TestResult:
     """Run a paired t-test with Cohen's d effect size.
 
@@ -45,6 +47,8 @@ def paired_t_test(
         null_values: TECS values under the null condition.
         alpha: Significance level.
         min_cohens_d: Minimum Cohen's d for practical significance.
+        bootstrap_n: If > 0, use bootstrap CI instead of normal approximation.
+        bootstrap_seed: Seed for bootstrap resampling.
 
     Returns:
         TestResult with all statistics and pass/fail decision.
@@ -59,10 +63,27 @@ def paired_t_test(
     # Cohen's d for paired samples
     d = np.mean(diff) / np.std(diff, ddof=1) if np.std(diff, ddof=1) > 0 else 0.0
 
-    # 95% CI for Cohen's d (non-central t approximation)
-    se_d = np.sqrt(1 / n + d ** 2 / (2 * n))
-    ci_low = d - 1.96 * se_d
-    ci_high = d + 1.96 * se_d
+    # CI for Cohen's d
+    if bootstrap_n > 0:
+        # Bootstrap CI
+        rng = np.random.RandomState(bootstrap_seed)
+        d_boot = []
+        for _ in range(bootstrap_n):
+            idx = rng.randint(0, n, size=n)
+            diff_b = diff[idx]
+            std_b = np.std(diff_b, ddof=1)
+            if std_b > 0:
+                d_boot.append(np.mean(diff_b) / std_b)
+        if d_boot:
+            ci_low = float(np.percentile(d_boot, 2.5))
+            ci_high = float(np.percentile(d_boot, 97.5))
+        else:
+            ci_low, ci_high = float(d), float(d)
+    else:
+        # Normal approximation (non-central t)
+        se_d = np.sqrt(1 / n + d ** 2 / (2 * n))
+        ci_low = d - 1.96 * se_d
+        ci_high = d + 1.96 * se_d
 
     passed = bool((p_val < alpha) and (abs(d) >= min_cohens_d))
 
