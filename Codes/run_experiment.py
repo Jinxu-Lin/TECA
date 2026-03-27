@@ -107,6 +107,7 @@ def run_phase_0(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
     from core.gradient_utils import compute_gradient_at_layer
     from core.tecs import compute_tecs
     from core.retrieval import load_counterfact
+    from core.easyedit_rome import build_hparams
 
     print("  Loading model...")
     model, tokenizer = load_model_and_tokenizer(model_name, device=device, dtype=cfg["model"]["dtype"])
@@ -114,6 +115,15 @@ def run_phase_0(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         path=cfg["data"].get("counterfact_path"),
         num_facts=num_facts,
         seed=cfg["data"]["seed"],
+    )
+
+    edit_layer = cfg["rome"].get("edit_layer") or cfg["model"].get("edit_layer") or 17
+    device_idx = int(device.split(":")[-1]) if ":" in device else 0
+    hparams = build_hparams(
+        model_name=model.config._name_or_path,
+        edit_layer=edit_layer,
+        stats_dir=cfg.get("stats_dir", "data/stats"),
+        device=device_idx,
     )
 
     # 0a. ROME validation
@@ -124,12 +134,9 @@ def run_phase_0(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
             model, tokenizer,
             subject=fact["subject"], prompt=fact["prompt"],
             target_new=fact["target_new"], target_old=fact["target_old"],
-            edit_layer=cfg["rome"].get("edit_layer") or cfg["model"].get("edit_layer"),
+            edit_layer=edit_layer,
             device=device,
-            v_lr=cfg["rome"]["v_lr"],
-            v_num_grad_steps=cfg["rome"]["v_num_grad_steps"],
-            clamp_norm_factor=cfg["rome"]["clamp_norm_factor"],
-            kl_factor=cfg["rome"]["kl_factor"],
+            easyedit_hparams=hparams,
         )
         if er.edit_success:
             edit_successes += 1
@@ -168,7 +175,9 @@ def run_phase_0(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
             model, tokenizer,
             subject=fact["subject"], prompt=fact["prompt"],
             target_new=fact["target_new"], target_old=fact["target_old"],
+            edit_layer=edit_layer,
             device=device,
+            easyedit_hparams=hparams,
         )
         grad_i = compute_gradient_at_layer(model, tokenizer, fact["prompt"], er_i.edit_layer, device)
         tecs_val = compute_tecs(er_i.delta_weight, grad_i)
@@ -227,11 +236,21 @@ def run_phase_1(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
     from core.tecs import compute_tecs, cosine_similarity_flat
     from core.retrieval import load_counterfact
     from core.statistics import paired_t_test
+    from core.easyedit_rome import build_hparams
 
     device = cfg["model"]["device"]
     model_name = cfg["model"]["name"]
     print("  Loading model...")
     model, tokenizer = load_model_and_tokenizer(model_name, device=device, dtype=cfg["model"]["dtype"])
+
+    edit_layer = cfg["rome"].get("edit_layer") or cfg["model"].get("edit_layer") or 17
+    device_idx = int(device.split(":")[-1]) if ":" in device else 0
+    hparams = build_hparams(
+        model_name=model.config._name_or_path,
+        edit_layer=edit_layer,
+        stats_dir=cfg.get("stats_dir", "data/stats"),
+        device=device_idx,
+    )
 
     # 1a. ROME vs Self
     print("  [1a] ROME vs Self positive control...")
@@ -248,7 +267,9 @@ def run_phase_1(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
             model, tokenizer,
             subject=fact["subject"], prompt=fact["prompt"],
             target_new=fact["target_new"], target_old=fact["target_old"],
+            edit_layer=edit_layer,
             device=device,
+            easyedit_hparams=hparams,
         )
         deltas.append(er.delta_weight)
 
@@ -461,6 +482,7 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
     from core.tecs import compute_tecs, compute_null_a, compute_angular_variance
     from core.retrieval import load_counterfact, retrieve_training_samples_bm25
     from core.statistics import paired_t_test
+    from core.easyedit_rome import build_hparams
 
     print("  Loading model...")
     model, tokenizer = load_model_and_tokenizer(
@@ -471,6 +493,15 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         num_facts=num_facts, seed=cfg["data"]["seed"],
     )
 
+    edit_layer_cfg = cfg["rome"].get("edit_layer") or cfg["model"].get("edit_layer") or 17
+    device_idx = int(device.split(":")[-1]) if ":" in device else 0
+    hparams = build_hparams(
+        model_name=model.config._name_or_path,
+        edit_layer=edit_layer_cfg,
+        stats_dir=cfg.get("stats_dir", "data/stats"),
+        device=device_idx,
+    )
+
     # ROME edits
     print(f"  Running ROME edits on {num_facts} facts...")
     edit_results = {}
@@ -479,9 +510,9 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
             model, tokenizer,
             subject=fact["subject"], prompt=fact["prompt"],
             target_new=fact["target_new"], target_old=fact["target_old"],
+            edit_layer=edit_layer_cfg,
             device=device,
-            v_lr=cfg["rome"]["v_lr"],
-            v_num_grad_steps=cfg["rome"]["v_num_grad_steps"],
+            easyedit_hparams=hparams,
         )
         edit_results[i] = er
         if (i + 1) % 20 == 0:
@@ -548,11 +579,18 @@ def run_phase_3(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
                     model, tokenizer, fact["prompt"], sample_texts,
                     wrong_layer, device, top_k=top_k_grad, weights=bm25_scores,
                 )
+                hp_wrong = build_hparams(
+                    model_name=model.config._name_or_path,
+                    edit_layer=wrong_layer,
+                    stats_dir=cfg.get("stats_dir", "data/stats"),
+                    device=device_idx,
+                )
                 er_wrong = compute_rome_edit(
                     model, tokenizer,
                     subject=fact["subject"], prompt=fact["prompt"],
                     target_new=fact["target_new"], target_old=fact["target_old"],
                     edit_layer=wrong_layer, device=device,
+                    easyedit_hparams=hp_wrong,
                 )
                 null_b_vals[offset] = compute_tecs(er_wrong.delta_weight, grad_wrong)
 

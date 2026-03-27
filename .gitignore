@@ -10,3 +10,8 @@ CLAUDE.md
 .claude/skills
 .claude/settings.local.json
 .sibyl/system.json
+EasyEdit/
+Codes/_Data/
+Codes/data/
+*.pyc
+__pycache__/

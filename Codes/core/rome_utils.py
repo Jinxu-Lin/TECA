@@ -65,17 +65,37 @@ def compute_rome_edit(
     v_num_grad_steps: int = 20,
     clamp_norm_factor: float = 4.0,
     kl_factor: float = 0.0625,
+    backend: str = "easyedit",
+    easyedit_hparams=None,
+    stats_dir: str = "data/stats",
 ) -> EditResult:
     """Run a single ROME edit and return the rank-1 weight delta at the edit layer.
 
-    This is a self-contained implementation. It:
-    1. Computes the subject's key vector k* at the edit layer
-    2. Optimizes for a target value v* that makes the model output target_new
-    3. Computes the rank-1 delta: (v* - W @ k*) @ k*^T / (k*^T @ k*)
-    4. Applies the edit, measures success, then restores original weights
+    backend="easyedit" (default) uses EasyEdit's proper ROME with C^{-1}
+    covariance. backend="builtin" uses the simplified self-contained version.
     """
     if edit_layer is None:
         edit_layer = _default_edit_layer(model)
+
+    if backend == "easyedit":
+        from .easyedit_rome import compute_rome_edit_easyedit
+        ee_result = compute_rome_edit_easyedit(
+            model, tokenizer,
+            subject=subject, prompt=prompt,
+            target_new=target_new, target_old=target_old,
+            edit_layer=edit_layer, hparams=easyedit_hparams,
+            device=device, stats_dir=stats_dir,
+        )
+        return EditResult(
+            subject=ee_result.subject,
+            target_old=ee_result.target_old,
+            target_new=ee_result.target_new,
+            edit_layer=ee_result.edit_layer,
+            delta_weight=ee_result.delta_weight,
+            edit_success=ee_result.edit_success,
+            pre_prob=ee_result.pre_prob,
+            post_prob=ee_result.post_prob,
+        )
 
     # Snapshot pre-edit weight
     param = get_mlp_proj_param(model, edit_layer)

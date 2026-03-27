@@ -1,0 +1,38 @@
+{
+  "config_summary": "model=gpt2-xl, n_facts=10, phases=[0], retrieval=bm25, seed=42",
+  "dry_run": false,
+  "phases": {
+    "0": {
+      "phase": 0,
+      "name": "Sanity Checks",
+      "checks": {
+        "rome_validation": {
+          "num_facts": 10,
+          "successes": 9,
+          "efficacy": 0.9,
+          "gate_passed": true
+        },
+        "gradient_check": {
+          "all_ok": true
+        },
+        "tecs_pipeline": {
+          "values": [
+            0.0024669580161571503,
+            0.008267129771411419,
+            0.006361888721585274,
+            -0.007522936910390854,
+            0.004926541820168495
+          ],
+          "has_nan": false,
+          "all_zero": false,
+          "pipeline_ok": true
+        }
+      },
+      "status": "passed"
+    }
+  },
+  "timing": {
+    "0": 47.3
+  },
+  "total_time_seconds": 47.3
+}
