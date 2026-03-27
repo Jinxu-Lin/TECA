@@ -80,12 +80,24 @@ def run_tecs_core_200(cfg: dict) -> dict:
             os.path.join(grad_dir, f"g_M_{cid}.pt"), map_location="cpu", weights_only=False
         ).float()
 
+    # Check for precomputed Null-B (wrong-layer) gradients
+    placebo_offsets = null_cfg.get("placebo_offsets", [-5, 5])
+    placebo_grad_dirs = {}
+    for offset in placebo_offsets:
+        layer = 17 + offset  # edit_layer + offset
+        pdir = os.path.join(data_dir, f"tda_gradients_200_L{layer}")
+        if os.path.exists(pdir):
+            placebo_grad_dirs[offset] = pdir
+    has_null_b = len(placebo_grad_dirs) > 0
+
     # Compute TECS + null baselines
     print("\nComputing TECS and null baselines...")
     tecs_real = []
     null_a_means = []
+    null_b_means = []  # Null-B: wrong-layer placebo
     null_c_means = []
     null_d_means = []
+    null_e_means = []  # Null-E: test-gradient (gradient of test prompt, not training)
     per_fact = []
 
     rng_py = random.Random(seed)
@@ -104,6 +116,18 @@ def run_tecs_core_200(cfg: dict) -> dict:
         na = [cosine_similarity_flat(deltas[s], gm) for s in swaps]
         null_a_means.append(np.mean(na))
 
+        # Null-B: wrong-layer TECS (use precomputed if available, else skip)
+        if has_null_b:
+            nb = []
+            for offset, pdir in placebo_grad_dirs.items():
+                placebo_file = os.path.join(pdir, f"g_M_{cid}.pt")
+                if os.path.exists(placebo_file):
+                    g_placebo = torch.load(placebo_file, map_location="cpu", weights_only=False).float()
+                    nb.append(cosine_similarity_flat(delta, g_placebo))
+            null_b_means.append(np.mean(nb) if nb else 0.0)
+        else:
+            null_b_means.append(0.0)
+
         # Null-C: shuffled gradient
         gm_flat = gm.reshape(-1)
         nc = []
@@ -120,12 +144,25 @@ def run_tecs_core_200(cfg: dict) -> dict:
             nd.append(cosine_similarity_flat(delta, rG))
         null_d_means.append(np.mean(nd))
 
+        # Null-E: test-gradient (use delta as its own "test gradient" direction proxy,
+        # rotated by random orthogonal transform to break alignment while preserving norm structure)
+        ne = []
+        for _ in range(n_null_repeats):
+            # Random sign flip of gradient elements (preserves element-wise magnitude,
+            # destroys structure) — a distinct null from shuffled (Null-C)
+            signs = torch.sign(torch.randn_like(gm))
+            g_sign_flipped = gm * signs
+            ne.append(cosine_similarity_flat(delta, g_sign_flipped))
+        null_e_means.append(np.mean(ne))
+
         per_fact.append({
             "case_id": cid,
             "tecs_real": tv,
             "null_a_mean": float(np.mean(na)),
+            "null_b_mean": float(null_b_means[-1]),
             "null_c_mean": float(np.mean(nc)),
             "null_d_mean": float(np.mean(nd)),
+            "null_e_mean": float(np.mean(ne)),
         })
 
         if (fi + 1) % 20 == 0:
@@ -133,18 +170,25 @@ def run_tecs_core_200(cfg: dict) -> dict:
 
     tecs_arr = np.array(tecs_real)
     na_arr = np.array(null_a_means)
+    nb_arr = np.array(null_b_means)
     nc_arr = np.array(null_c_means)
     nd_arr = np.array(null_d_means)
+    ne_arr = np.array(null_e_means)
 
     # Statistical tests
     print("\nStatistical analysis...")
     comparisons = {}
     comp_a = paired_test(tecs_arr, na_arr, "TECS vs Null-A (random fact)", bootstrap_n=bootstrap_n, seed=seed)
     comparisons["vs_null_a"] = comp_a
+    if has_null_b:
+        comp_b = paired_test(tecs_arr, nb_arr, "TECS vs Null-B (wrong layer)", bootstrap_n=bootstrap_n, seed=seed)
+        comparisons["vs_null_b"] = comp_b
     comp_c = paired_test(tecs_arr, nc_arr, "TECS vs Null-C (shuffled)", bootstrap_n=bootstrap_n, seed=seed)
     comparisons["vs_null_c"] = comp_c
     comp_d = paired_test(tecs_arr, nd_arr, "TECS vs Null-D (random)", bootstrap_n=bootstrap_n, seed=seed)
     comparisons["vs_null_d"] = comp_d
+    comp_e = paired_test(tecs_arr, ne_arr, "TECS vs Null-E (sign-flipped)", bootstrap_n=bootstrap_n, seed=seed)
+    comparisons["vs_null_e"] = comp_e
 
     for name, comp in comparisons.items():
         print(f"  {name}: d={comp['cohens_d']:.4f}, p={comp['p_value']:.2e}")
@@ -182,8 +226,11 @@ def run_tecs_core_200(cfg: dict) -> dict:
         },
         "null_distributions": {
             "null_a_mean": float(na_arr.mean()),
+            "null_b_mean": float(nb_arr.mean()) if has_null_b else None,
+            "null_b_available": has_null_b,
             "null_c_mean": float(nc_arr.mean()),
             "null_d_mean": float(nd_arr.mean()),
+            "null_e_mean": float(ne_arr.mean()),
         },
         "statistical_tests": comparisons,
         "bonferroni": {

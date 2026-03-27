@@ -129,7 +129,13 @@ def cohens_d(x, y):
     """Compute Cohen's d for paired samples."""
     diff = np.asarray(x) - np.asarray(y)
     s = diff.std(ddof=1)
-    return float(diff.mean() / s) if s > 1e-12 else 0.0
+    if s > 1e-12:
+        return float(diff.mean() / s)
+    # std ~ 0: if mean is also ~ 0, no effect; if mean is non-zero, effect is infinite
+    m = diff.mean()
+    if abs(m) < 1e-12:
+        return 0.0
+    return float(np.sign(m) * 1e6)  # large sentinel for perfect separation
 
 
 def bootstrap_ci(data, n_boot: int = 10000, ci: float = 0.95, seed: int = 42):

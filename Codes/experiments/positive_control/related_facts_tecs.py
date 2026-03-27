@@ -30,7 +30,7 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from experiments.common import (
-    set_seed, save_results, tecs_rank1, cohens_d,
+    set_seed, save_results, tecs_rank1, cosine_similarity_flat, cohens_d,
     bootstrap_ci, paired_test, load_counterfact_facts, get_results_dir,
 )
 from core.config import load_config
@@ -193,8 +193,6 @@ def run_related_facts_tecs(cfg: dict) -> dict:
             grad = fact_data[cid_j]["gradient"]
             tecs = cosine_similarity_flat(delta, grad)
             cross_tecs.append(tecs)
-
-    from experiments.common import cosine_similarity_flat
 
     within_arr = np.array(within_tecs)
     cross_arr = np.array(cross_tecs)
