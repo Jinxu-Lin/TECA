@@ -1,10 +1,26 @@
 # Phase 1: Positive Control Experiments
-# ROME vs self, toy model, related facts
+# 1a: ROME vs self, 1b: toy model, 1c: related facts
 
 _base_: "base.yaml"
+
+positive_control:
+  # 1a: ROME vs Self (Trivial Positive)
+  rome_self_sigmas: [0.0, 0.01, 0.1, 0.5, 1.0]
+  rome_self_num_facts: 100
+  # 1b: Toy Linear Associative Memory
+  toy_model_d: 64
+  toy_model_n_pairs: 200
+  toy_model_n_layers: 3
+  toy_model_n_epochs: 300
+  toy_model_lr: 0.001
+  toy_model_n_edits: 50
+  # 1c: Semantically Related Facts
+  related_facts_num: 200
 
 output:
   results_dir: "_Results"
   save_tensors: false
 
+# Gate: toy model d < 0.3 -> ESCALATE (TECS metric may be flawed)
+# Gate: ROME vs self not monotonic -> debug metric pipeline
 phases: [1]

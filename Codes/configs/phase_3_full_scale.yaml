@@ -3,9 +3,21 @@
 
 _base_: "base.yaml"
 
+data:
+  num_facts: 200
+
+null_baselines:
+  null_a_num: 10
+  placebo_offsets: [-5, 5]
+
+statistics:
+  bootstrap_n: 10000
+  alpha: 0.05
+
 output:
   results_dir: "_Results"
   save_tensors: true
   tensor_dir: "_Data"
 
+# Subexperiments: rome_200, tda_gradients_200, tecs_core_200, subspace_geometry_200
 phases: [3]

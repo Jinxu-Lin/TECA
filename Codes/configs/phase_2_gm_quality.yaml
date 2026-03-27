@@ -1,7 +1,19 @@
 # Phase 2: g_M Quality Analysis
-# Within/between similarity, PC1 removal, retrieval ablation
+# 2a: Within/between similarity, 2b: PC1 removal, 2c: retrieval ablation
 
 _base_: "base.yaml"
+
+gm_quality:
+  # 2a: Within vs Between Gradient Similarity
+  within_between_top_k: 20
+  # 2b: PC1 Removal
+  pc1_removal: true
+  # 2c: Retrieval Method Ablation
+  retrieval_methods: ["bm25", "tfidf", "contriever", "uniform"]
+
+retrieval:
+  top_k_candidates: 100
+  top_k_gradient: 10
 
 output:
   results_dir: "_Results"

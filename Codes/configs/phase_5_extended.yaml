@@ -1,7 +1,16 @@
 # Phase 5: Extended Analyses
-# Whitening decomposition, MEMIT comparison
+# 5a: Whitening decomposition (H6), 5b: MEMIT comparison
 
 _base_: "base.yaml"
+
+data:
+  num_facts: 200
+
+# Whitening: compare TECS_whitened vs TECS_unwhitened
+# MEMIT: cross-layer TECS across layers 13-17
+memit:
+  layers: [13, 14, 15, 16, 17]
+  use_identity_covariance: true
 
 output:
   results_dir: "_Results"

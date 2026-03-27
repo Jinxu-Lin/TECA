@@ -2,6 +2,18 @@
 
 _base_: "base.yaml"
 
+visualization:
+  figures:
+    - tecs_distribution       # TECS real vs Null-A overlay with effect size
+    - eigenvalue_spectra      # Editing vs attribution eigenvalue spectra
+    - principal_angles        # Angle distribution vs random baseline (violin)
+    - cross_projection        # Asymmetry diagram (G-in-D vs D-in-G)
+    - memit_heatmap           # Cross-layer alignment heatmap
+    - positive_control        # Toy model TECS vs noise level
+    - gm_quality              # eff-dim comparison across retrieval methods
+  format: "pdf"
+  dpi: 300
+
 output:
   results_dir: "_Results"
   save_tensors: false

@@ -1,5 +1,5 @@
 # Phase 6: Cross-Model Validation
-# GPT-J-6B replication
+# GPT-J-6B replication of core TECS + subspace geometry + positive control
 
 _base_: "base.yaml"
 
@@ -8,10 +8,19 @@ cross_model:
   model_name: "EleutherAI/gpt-j-6b"
   dtype: "float16"
   num_facts: 100
+  # GPT-J optimal edit layer (from ROME paper)
+  edit_layer: 5
+
+model:
+  dtype: "float16"
+
+data:
+  num_facts: 100
 
 output:
   results_dir: "_Results"
   save_tensors: true
   tensor_dir: "_Data"
 
+# Subexperiments: gptj_rome, gptj_tda, gptj_tecs, gptj_positive_control
 phases: [6]

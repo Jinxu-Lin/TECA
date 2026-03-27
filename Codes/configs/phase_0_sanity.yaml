@@ -6,8 +6,14 @@ _base_: "base.yaml"
 data:
   num_facts: 10  # sanity check uses fewer facts
 
+rome:
+  edit_layer: 17  # GPT-2-XL default
+
 output:
   results_dir: "_Results"
   save_tensors: false
 
+# Gate: efficacy < 75% -> debug ROME setup
+# Gate: gradient NaN or all-zero -> debug gradient pipeline
+# Gate: TECS all NaN -> debug TECS pipeline
 phases: [0]

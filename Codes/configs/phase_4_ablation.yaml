@@ -1,7 +1,19 @@
 # Phase 4: Ablation Experiments
-# Top-k, weighting, loss function, scope
+# 4 axes: top-k, weighting, loss function, gradient scope
 
 _base_: "base.yaml"
+
+data:
+  num_facts: 200
+
+ablation:
+  top_k_values: [5, 10, 20, 50]
+  weighting_methods: ["bm25", "uniform", "tfidf"]
+  loss_functions: ["object_token_ce", "full_sequence_ce", "margin"]
+  scope_configs: ["single_layer", "multi_layer"]
+  multi_layer_range: 2  # l* +/- 2
+  # Robustness criterion: TECS Cohen's d variation < 20% across settings
+  max_variation_pct: 20
 
 output:
   results_dir: "_Results"

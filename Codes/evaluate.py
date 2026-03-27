@@ -141,10 +141,121 @@ def evaluate_phase_3(data: Dict) -> Dict[str, Any]:
     return summary
 
 
+def evaluate_phase_2(data: Dict) -> Dict[str, Any]:
+    """Evaluate Phase 2: g_M Quality Analysis."""
+    analyses = data.get("analyses", {})
+    summary = {"phase": 2, "name": "g_M Quality Analysis", "results": {}}
+
+    wb = analyses.get("within_between", {})
+    if wb.get("status") not in ("dry_run", "pending_gpu", None):
+        summary["results"]["within_vs_between"] = {
+            "within_mean": wb.get("within_fact", {}).get("mean", "N/A"),
+            "between_mean": wb.get("between_fact", {}).get("mean", "N/A"),
+            "cohens_d": wb.get("statistical_test", {}).get("cohens_d", "N/A"),
+            "p_value": wb.get("statistical_test", {}).get("p_value", "N/A"),
+        }
+
+    pc1 = analyses.get("pc1_removal", {})
+    if pc1.get("status") not in ("dry_run", "pending_gpu", None):
+        summary["results"]["pc1_removal"] = {
+            "eff_dim_before": pc1.get("pc1_analysis", {}).get("eff_dim_before", "N/A"),
+            "eff_dim_after": pc1.get("pc1_analysis", {}).get("eff_dim_after", "N/A"),
+            "tecs_before": pc1.get("tecs_comparison", {}).get("abs_tecs_before_mean", "N/A"),
+            "tecs_after": pc1.get("tecs_comparison", {}).get("abs_tecs_after_mean", "N/A"),
+        }
+
+    ret = analyses.get("retrieval_ablation", {})
+    if ret.get("status") not in ("dry_run", "pending_gpu", None):
+        summary["results"]["retrieval_ablation"] = {
+            "methods": ret.get("methods", "N/A"),
+        }
+
+    summary["overall"] = data.get("status", "unknown")
+    return summary
+
+
+def evaluate_phase_4(data: Dict) -> Dict[str, Any]:
+    """Evaluate Phase 4: Ablation experiments."""
+    ablations = data.get("ablations", {})
+    summary = {"phase": 4, "name": "Ablation Experiments", "results": {}}
+
+    for axis in ("top_k", "weighting", "loss_function", "scope"):
+        abl = ablations.get(axis, {})
+        if abl.get("status") not in ("dry_run", "pending_gpu", None):
+            tecs_means = abl.get("tecs_means", {})
+            if tecs_means:
+                values = list(tecs_means.values())
+                variation = (max(values) - min(values)) / max(abs(np.mean(values)), 1e-12) * 100
+                summary["results"][f"ablation_{axis}"] = {
+                    "tecs_means": tecs_means,
+                    "variation_pct": round(variation, 2),
+                    "gate": "PASS" if variation < 20 else "FAIL",
+                }
+            else:
+                summary["results"][f"ablation_{axis}"] = {"status": abl.get("status", "N/A")}
+
+    summary["overall"] = data.get("status", "unknown")
+    return summary
+
+
+def evaluate_phase_5(data: Dict) -> Dict[str, Any]:
+    """Evaluate Phase 5: Extended analyses."""
+    analyses = data.get("analyses", {})
+    summary = {"phase": 5, "name": "Extended Analyses", "results": {}}
+
+    whitening = analyses.get("whitening", {})
+    if whitening.get("status") not in ("dry_run", "pending_gpu", None):
+        summary["results"]["whitening"] = {
+            "cohens_d": whitening.get("cohens_d", "N/A"),
+            "p_value": whitening.get("p_value", "N/A"),
+        }
+
+    memit = analyses.get("memit", {})
+    if memit.get("status") not in ("dry_run", "pending_gpu", None):
+        summary["results"]["memit"] = {
+            "cross_layer_d": memit.get("cross_layer_cohens_d", "N/A"),
+            "matched_layer_d": memit.get("matched_layer_cohens_d", "N/A"),
+        }
+
+    summary["overall"] = data.get("status", "unknown")
+    return summary
+
+
+def evaluate_phase_6(data: Dict) -> Dict[str, Any]:
+    """Evaluate Phase 6: Cross-model validation."""
+    summary = {"phase": 6, "name": "Cross-Model Validation", "results": {}}
+
+    if data.get("status") == "skipped (cross_model.enabled = false)":
+        summary["overall"] = "skipped"
+        return summary
+
+    tecs = data.get("tecs_core", {})
+    if tecs:
+        summary["results"]["gptj_tecs"] = {
+            "cohens_d": tecs.get("cohens_d", "N/A"),
+            "p_value": tecs.get("p_value", "N/A"),
+            "mean_tecs_real": tecs.get("mean_tecs_real", "N/A"),
+        }
+
+    geom = data.get("subspace_geometry", {})
+    if geom:
+        summary["results"]["gptj_geometry"] = {
+            "eff_dim_edit": geom.get("eff_dim_edit", "N/A"),
+            "eff_dim_grad": geom.get("eff_dim_grad", "N/A"),
+        }
+
+    summary["overall"] = data.get("status", "unknown")
+    return summary
+
+
 PHASE_EVALUATORS = {
     0: evaluate_phase_0,
     1: evaluate_phase_1,
+    2: evaluate_phase_2,
     3: evaluate_phase_3,
+    4: evaluate_phase_4,
+    5: evaluate_phase_5,
+    6: evaluate_phase_6,
 }
 
 
@@ -249,6 +360,10 @@ def generate_report(
             ("TECS pipeline", lambda e: e.get("results", {}).get("tecs_pipeline", {}).get("gate") == "PASS")],
         1: [("ROME vs self monotonic", lambda e: e.get("results", {}).get("rome_vs_self", {}).get("gate") == "PASS"),
             ("Toy model d > 0.3", lambda e: e.get("results", {}).get("toy_model", {}).get("gate") == "PASS")],
+        4: [("Top-k variation < 20%", lambda e: e.get("results", {}).get("ablation_top_k", {}).get("gate") == "PASS"),
+            ("Weighting variation < 20%", lambda e: e.get("results", {}).get("ablation_weighting", {}).get("gate") == "PASS"),
+            ("Loss fn variation < 20%", lambda e: e.get("results", {}).get("ablation_loss_function", {}).get("gate") == "PASS"),
+            ("Scope variation < 20%", lambda e: e.get("results", {}).get("ablation_scope", {}).get("gate") == "PASS")],
     }
 
     for phase_id in sorted(all_evaluations.keys()):
@@ -331,10 +446,9 @@ def run_evaluation(
         if data:
             loaded[name] = data
 
-    # Evaluate each phase
+    # Evaluate each phase from run_experiment.py output (nested under "phases")
     all_evaluations = {}
     for name, data in loaded.items():
-        # Try to extract phase data
         phases = data.get("phases", {})
         for phase_id_str, phase_data in phases.items():
             phase_id = int(phase_id_str)
@@ -342,6 +456,36 @@ def run_evaluation(
                 eval_result = PHASE_EVALUATORS[phase_id](phase_data)
                 all_evaluations[phase_id] = eval_result
                 print(f"\n  Evaluated Phase {phase_id}: {eval_result.get('overall', 'unknown')}")
+
+    # Also evaluate standalone result files from individual experiment scripts
+    STANDALONE_FILE_MAP = {
+        "pc_rome_self.json": (1, "rome_self_standalone"),
+        "pc_toy_model.json": (1, "toy_model_standalone"),
+        "pc_related_facts.json": (1, "related_facts_standalone"),
+        "gm_within_between.json": (2, "within_between_standalone"),
+        "gm_pc1_removal.json": (2, "pc1_removal_standalone"),
+        "full_tecs_200.json": (3, "tecs_core_standalone"),
+        "full_subspace_200.json": (3, "subspace_standalone"),
+        "ablation_topk.json": (4, "topk_standalone"),
+        "ablation_weighting.json": (4, "weighting_standalone"),
+        "ablation_loss.json": (4, "loss_standalone"),
+        "ablation_scope.json": (4, "scope_standalone"),
+        "ext_whitening_200.json": (5, "whitening_standalone"),
+        "ext_memit_200.json": (5, "memit_standalone"),
+        "cross_gptj_tecs.json": (6, "gptj_tecs_standalone"),
+    }
+    for filename, (phase_id, label) in STANDALONE_FILE_MAP.items():
+        if filename in loaded and phase_id not in all_evaluations:
+            data = loaded[filename]
+            summary = {"phase": phase_id, "name": f"Phase {phase_id} ({label})", "results": {}}
+            # Extract key metrics from standalone result files
+            for key in ("decision", "statistical_test", "tecs_distribution", "tecs",
+                        "validation", "pc1_analysis", "tecs_comparison"):
+                if key in data and isinstance(data[key], dict):
+                    summary["results"][key] = data[key]
+            summary["overall"] = data.get("status", data.get("experiment", "standalone"))
+            all_evaluations[phase_id] = summary
+            print(f"\n  Evaluated Phase {phase_id} from {filename}")
 
     # Generate report
     report = generate_report(all_evaluations, cfg, results_dir)
