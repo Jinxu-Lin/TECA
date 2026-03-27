@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -38,8 +39,24 @@ def set_seed(seed: int = 42) -> None:
         pass
 
 
+def _get_git_commit_hash() -> str:
+    """Get the short git commit hash, or 'unknown' if not in a git repo."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+        ).strip().decode()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unknown"
+
+
 def save_results(results: Dict[str, Any], output_path: str) -> None:
-    """Save results dict to JSON with proper formatting."""
+    """Save results dict to JSON with proper formatting.
+
+    Automatically injects git_commit hash for reproducibility tracking.
+    """
+    results.setdefault("git_commit", _get_git_commit_hash())
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2, default=_json_default)

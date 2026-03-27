@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import gc
+import json
 import os
 import random
 import sys
@@ -31,8 +32,20 @@ if _PROJECT_ROOT not in sys.path:
 from experiments.common import (
     set_seed, save_results, cosine_similarity_flat, cohens_d,
     bootstrap_ci, paired_test, get_results_dir, get_data_dir,
+    load_counterfact_facts,
 )
 from core.config import load_config
+
+
+def _compute_test_gradient(model, tokenizer, prompt_text, layer_idx, device):
+    """Compute gradient of next-token prediction loss on a single prompt.
+
+    This is the 'test gradient': grad_W L(prompt; theta) for the CounterFact
+    prompt itself, without BM25 retrieval. Used by Null-E to test whether
+    gradient source matters.
+    """
+    from core.gradient_utils import compute_gradient_at_layer
+    return compute_gradient_at_layer(model, tokenizer, prompt_text, layer_idx, device)
 
 
 def run_tecs_core_200(cfg: dict) -> dict:
@@ -50,6 +63,13 @@ def run_tecs_core_200(cfg: dict) -> dict:
     n_null_repeats = null_cfg.get("null_a_num", 10)
     stats_cfg = cfg.get("statistics", {})
     bootstrap_n = stats_cfg.get("bootstrap_n", 10000)
+
+    model_name = cfg.get("model", {}).get("name", "gpt2-xl")
+    device = cfg.get("model", {}).get("device", "cuda")
+    edit_layer = cfg.get("model", {}).get("edit_layer") or 17
+    data_cfg = cfg.get("data", {})
+    counterfact_path = data_cfg.get("counterfact_path", "data/counterfact.json")
+    num_facts = data_cfg.get("num_facts", 200)
 
     print("=" * 60)
     print("Phase 3: Full-Scale TECS Core (200 Facts)")
@@ -80,6 +100,18 @@ def run_tecs_core_200(cfg: dict) -> dict:
             os.path.join(grad_dir, f"g_M_{cid}.pt"), map_location="cpu", weights_only=False
         ).float()
 
+    # Load CounterFact prompts for Null-E (test-gradient baseline)
+    facts = load_counterfact_facts(counterfact_path, num_facts=num_facts, seed=seed)
+    cid_to_prompt = {str(f["case_id"]): f["prompt"] for f in facts}
+
+    # Load model for Null-E test-gradient computation
+    print("\nLoading model for Null-E test-gradient computation...")
+    from core.model_utils import load_model_and_tokenizer
+    model, tokenizer = load_model_and_tokenizer(model_name, device=device)
+    # Freeze all parameters to save memory (only need grad on target param)
+    for p in model.parameters():
+        p.requires_grad_(False)
+
     # Check for precomputed Null-B (wrong-layer) gradients
     placebo_offsets = null_cfg.get("placebo_offsets", [-5, 5])
     placebo_grad_dirs = {}
@@ -101,6 +133,8 @@ def run_tecs_core_200(cfg: dict) -> dict:
     per_fact = []
 
     rng_py = random.Random(seed)
+    # S1: Explicit seed generator for reproducible null baselines across environments
+    torch_gen = torch.Generator().manual_seed(seed)
 
     for fi, cid in enumerate(common_ids):
         delta = deltas[cid]
@@ -132,7 +166,7 @@ def run_tecs_core_200(cfg: dict) -> dict:
         gm_flat = gm.reshape(-1)
         nc = []
         for _ in range(n_null_repeats):
-            perm = torch.randperm(gm_flat.shape[0])
+            perm = torch.randperm(gm_flat.shape[0], generator=torch_gen)
             gs = gm_flat[perm].reshape(gm.shape)
             nc.append(cosine_similarity_flat(delta, gs))
         null_c_means.append(np.mean(nc))
@@ -140,20 +174,32 @@ def run_tecs_core_200(cfg: dict) -> dict:
         # Null-D: random direction
         nd = []
         for _ in range(n_null_repeats):
-            rG = torch.randn_like(gm)
+            rG = torch.randn(gm.shape, generator=torch_gen)
             nd.append(cosine_similarity_flat(delta, rG))
         null_d_means.append(np.mean(nd))
 
-        # Null-E: test-gradient (use delta as its own "test gradient" direction proxy,
-        # rotated by random orthogonal transform to break alignment while preserving norm structure)
-        ne = []
-        for _ in range(n_null_repeats):
-            # Random sign flip of gradient elements (preserves element-wise magnitude,
-            # destroys structure) — a distinct null from shuffled (Null-C)
-            signs = torch.sign(torch.randn_like(gm))
-            g_sign_flipped = gm * signs
-            ne.append(cosine_similarity_flat(delta, g_sign_flipped))
-        null_e_means.append(np.mean(ne))
+        # Null-E: test-gradient TECS (gradient-source control)
+        # Use the CounterFact prompt itself to compute a "test gradient"
+        # grad_W L(prompt; theta), then compute TECS with that instead of g_M.
+        # This tests whether the gradient SOURCE (training data vs test prompt) matters.
+        prompt_text = cid_to_prompt.get(cid, None)
+        if prompt_text is not None:
+            g_test = _compute_test_gradient(model, tokenizer, prompt_text, edit_layer, device)
+            ne_val = cosine_similarity_flat(delta, g_test)
+            null_e_means.append(ne_val)
+        else:
+            # Fallback: if prompt not found, record 0.0
+            null_e_means.append(0.0)
+
+        # NOTE: Previous implementation used random sign flip (commented out below).
+        # That was a Null-C variant, not the intended test-gradient control.
+        # --- Old sign-flip implementation (Null-C variant, NOT Null-E) ---
+        # ne = []
+        # for _ in range(n_null_repeats):
+        #     signs = torch.sign(torch.randn_like(gm))
+        #     g_sign_flipped = gm * signs
+        #     ne.append(cosine_similarity_flat(delta, g_sign_flipped))
+        # null_e_means.append(np.mean(ne))
 
         per_fact.append({
             "case_id": cid,
@@ -162,11 +208,17 @@ def run_tecs_core_200(cfg: dict) -> dict:
             "null_b_mean": float(null_b_means[-1]),
             "null_c_mean": float(np.mean(nc)),
             "null_d_mean": float(np.mean(nd)),
-            "null_e_mean": float(np.mean(ne)),
+            "null_e_test_grad": float(null_e_means[-1]),
         })
 
         if (fi + 1) % 20 == 0:
             print(f"  [{fi + 1}/{len(common_ids)}] TECS={tv:.6f}")
+
+    # Clean up model used for Null-E
+    del model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     tecs_arr = np.array(tecs_real)
     na_arr = np.array(null_a_means)
@@ -187,7 +239,7 @@ def run_tecs_core_200(cfg: dict) -> dict:
     comparisons["vs_null_c"] = comp_c
     comp_d = paired_test(tecs_arr, nd_arr, "TECS vs Null-D (random)", bootstrap_n=bootstrap_n, seed=seed)
     comparisons["vs_null_d"] = comp_d
-    comp_e = paired_test(tecs_arr, ne_arr, "TECS vs Null-E (sign-flipped)", bootstrap_n=bootstrap_n, seed=seed)
+    comp_e = paired_test(tecs_arr, ne_arr, "TECS vs Null-E (test-gradient)", bootstrap_n=bootstrap_n, seed=seed)
     comparisons["vs_null_e"] = comp_e
 
     for name, comp in comparisons.items():

@@ -30,9 +30,12 @@ def compute_gradient_at_layer(
     """
     param = get_mlp_proj_param(model, layer_idx)
 
-    # Zero all grads, enable grad only for target param
+    # Freeze all parameters to save memory, then enable only target param
+    requires_grad_backup = {p: p.requires_grad for p in model.parameters()}
+    for p in model.parameters():
+        p.requires_grad_(False)
+
     model.zero_grad()
-    requires_grad_backup = param.requires_grad
     param.requires_grad_(True)
 
     inputs = tokenizer(test_prompt, return_tensors="pt").to(device)
@@ -42,8 +45,9 @@ def compute_gradient_at_layer(
 
     grad = param.grad.detach().clone().cpu()
 
-    # Restore
-    param.requires_grad_(requires_grad_backup)
+    # Restore all requires_grad states
+    for p, rg in requires_grad_backup.items():
+        p.requires_grad_(rg)
     model.zero_grad()
 
     return grad

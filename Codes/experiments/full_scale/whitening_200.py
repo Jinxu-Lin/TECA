@@ -34,8 +34,19 @@ from experiments.common import (
 from core.config import load_config
 
 
-def compute_covariance_matrix(model_name, edit_layer, device, n_samples=100, max_seq_len=256):
-    """Compute C = E[k k^T] where k is the MLP c_fc input at the edit layer."""
+def compute_covariance_matrix(model_name, edit_layer, device, n_samples=100, max_seq_len=256,
+                              low_rank_k=512):
+    """Compute low-rank approximation of C = E[k k^T] where k is the MLP c_proj
+    input (d_ff-dimensional) at the edit layer.
+
+    For GPT-2-XL, c_proj input is 6400-dimensional (d_ff). A full (6400, 6400)
+    covariance would be expensive, so we use torch.svd_lowrank to get the top-k
+    eigenvectors/eigenvalues directly from the centered activation matrix.
+
+    Returns:
+        eigenvalues: (low_rank_k,) tensor of top eigenvalues (descending)
+        eigenvectors: (d_ff, low_rank_k) tensor of corresponding eigenvectors
+    """
     from core.model_utils import load_model_and_tokenizer
     from datasets import load_dataset
 
@@ -44,12 +55,15 @@ def compute_covariance_matrix(model_name, edit_layer, device, n_samples=100, max
     activations = []
 
     def hook_fn(module, input, output):
+        # Capture c_proj input: shape (batch, seq_len, d_ff)
         inp = input[0].detach().float()
         for b in range(inp.shape[0]):
+            # Subsample every 4th token to reduce memory
             activations.append(inp[b, ::4, :].cpu())
 
     block = model.transformer.h[edit_layer]
-    handle = block.mlp.c_fc.register_forward_hook(hook_fn)
+    # Hook on c_proj (NOT c_fc) to capture d_ff-dimensional activations
+    handle = block.mlp.c_proj.register_forward_hook(hook_fn)
 
     ds = load_dataset("wikitext", "wikitext-103-raw-v1", split="train", streaming=True)
     texts = []
@@ -72,12 +86,20 @@ def compute_covariance_matrix(model_name, edit_layer, device, n_samples=100, max
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    all_acts = torch.cat(activations, dim=0)
+    all_acts = torch.cat(activations, dim=0)  # (N_tokens, d_ff)
     mean_act = all_acts.mean(dim=0)
-    centered = all_acts - mean_act
-    C = (centered.T @ centered) / centered.shape[0]
+    centered = all_acts - mean_act  # (N_tokens, d_ff)
 
-    return C
+    # Low-rank SVD: centered = U @ diag(S) @ Vh
+    # The covariance C = centered^T @ centered / N has eigenvalues S^2/N
+    # and eigenvectors are the columns of Vh^T (= V).
+    k = min(low_rank_k, centered.shape[0], centered.shape[1])
+    U, S, V = torch.svd_lowrank(centered, q=k, niter=5)
+    # Eigenvalues of C = S^2 / N (descending because svd_lowrank returns sorted)
+    eigenvalues = (S ** 2) / centered.shape[0]
+    eigenvectors = V  # (d_ff, k)
+
+    return eigenvalues, eigenvectors
 
 
 def run_whitening_200(cfg: dict) -> dict:
@@ -109,26 +131,25 @@ def run_whitening_200(cfg: dict) -> dict:
     common_ids = sorted(rome_files & grad_files, key=lambda x: int(x))
     print(f"  Common case IDs: {len(common_ids)}")
 
-    # Compute or load covariance matrix
-    cov_cache = os.path.join(data_dir, "cov_matrix_layer17.pt")
+    # Compute or load covariance low-rank approximation
+    # Cache uses a different name since we changed from c_fc (d_model) to c_proj (d_ff)
+    cov_cache = os.path.join(data_dir, "cov_lowrank_cproj_layer17.pt")
     if os.path.exists(cov_cache):
-        print("  Loading cached covariance matrix...")
-        C = torch.load(cov_cache, map_location="cpu", weights_only=True).float()
+        print("  Loading cached covariance low-rank factors...")
+        cached = torch.load(cov_cache, map_location="cpu", weights_only=True)
+        eigenvalues = cached["eigenvalues"].float()
+        eigenvectors = cached["eigenvectors"].float()
     else:
-        print("  Computing covariance matrix from WikiText...")
-        C = compute_covariance_matrix(model_name, edit_layer, device)
-        torch.save(C, cov_cache)
+        print("  Computing covariance matrix from WikiText (c_proj input, d_ff space)...")
+        eigenvalues, eigenvectors = compute_covariance_matrix(model_name, edit_layer, device)
+        torch.save({"eigenvalues": eigenvalues, "eigenvectors": eigenvectors}, cov_cache)
 
-    # Eigendecomposition for C^{-1}
-    print("  Computing eigendecomposition...")
-    eigenvalues, eigenvectors = torch.linalg.eigh(C)
-    top_k = min(512, len(eigenvalues))
-    eigenvalues = eigenvalues[-top_k:]
-    eigenvectors = eigenvectors[:, -top_k:]
+    # Filter near-zero eigenvalues
     threshold = eigenvalues.max() * 1e-6
     valid = eigenvalues > threshold
     eigenvalues = eigenvalues[valid]
     eigenvectors = eigenvectors[:, valid]
+    print(f"  Covariance: {eigenvectors.shape[0]}-dim space, {len(eigenvalues)} valid eigenvalues")
 
     # Process each fact
     print(f"\nComputing whitening variants for {len(common_ids)} facts...")
@@ -145,31 +166,34 @@ def run_whitening_200(cfg: dict) -> dict:
         t_raw = cosine_similarity_flat(delta_W, g_M)
         tecs_raw.append(t_raw)
 
-        # For whitening operations, we need to identify the key/value structure.
-        # delta_W has shape matching the c_proj weight. For GPT-2 Conv1D: (6400, 1600).
-        # The 1600-dim axis is the key (output) space where C operates.
-        # C is (1600, 1600).
+        # Whitening operations in the key space (d_ff = 6400 for GPT-2-XL c_proj).
+        # delta_W shape: (d_ff, d_model) = (6400, 1600) for GPT-2 Conv1D.
+        # C operates on the d_ff (row) dimension of delta_W.
+        # eigenvectors: (d_ff, k), eigenvalues: (k,)
+        #
+        # For matrix M of shape (d_ff, d_model), applying C along d_ff:
+        #   C @ M  approx=  V @ diag(lambda) @ V^T @ M
+        # For C^{-1} @ M:
+        #   C^{-1} @ M  approx=  V @ diag(1/lambda) @ V^T @ M
 
-        # Unwhitened: apply C to the 1600-dim columns of delta_W -> delta_W @ C
-        # (6400, 1600) @ (1600, 1600) = (6400, 1600)
-        if delta_W.shape[1] == C.shape[0]:
-            delta_unwhitened = delta_W @ C
+        d_ff = eigenvectors.shape[0]
+
+        # Unwhitened: "undo" whitening by applying C to delta_W along d_ff axis
+        # delta_unwhitened = C @ delta_W  (approx via low-rank)
+        if delta_W.shape[0] == d_ff:
+            proj_d = eigenvectors.T @ delta_W  # (k, d_model)
+            delta_unwhitened = eigenvectors @ (eigenvalues.unsqueeze(1) * proj_d)  # (d_ff, d_model)
         else:
-            # Shape mismatch, try transpose
-            delta_unwhitened = delta_W.T @ C
-            delta_unwhitened = delta_unwhitened.T
+            delta_unwhitened = delta_W  # fallback
 
         t_unwhitened = cosine_similarity_flat(delta_unwhitened, g_M)
         tecs_unwhitened.append(t_unwhitened)
 
-        # Whitened: apply C^{-1} to g_M columns -> g_M @ C^{-1}
-        # C^{-1} @ x = V diag(1/lambda) V^T @ x
-        if g_M.shape[1] == eigenvectors.shape[0]:
-            g_M_T = g_M.T  # (1600, 6400)
-            proj = eigenvectors.T @ g_M_T
-            scaled = proj / eigenvalues.unsqueeze(1)
-            g_whitened_T = eigenvectors @ scaled
-            g_whitened = g_whitened_T.T
+        # Whitened: apply C^{-1} to g_M along d_ff axis
+        # g_whitened = C^{-1} @ g_M  (approx via low-rank)
+        if g_M.shape[0] == d_ff:
+            proj_g = eigenvectors.T @ g_M  # (k, d_model)
+            g_whitened = eigenvectors @ (proj_g / eigenvalues.unsqueeze(1))  # (d_ff, d_model)
         else:
             g_whitened = g_M  # fallback
 

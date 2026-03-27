@@ -8,7 +8,7 @@ data:
 
 ablation:
   top_k_values: [5, 10, 20, 50]
-  weighting_methods: ["bm25", "uniform", "tfidf"]
+  weighting_methods: ["bm25", "uniform", "rank_inverse"]
   loss_functions: ["object_token_ce", "full_sequence_ce", "margin"]
   scope_configs: ["single_layer", "multi_layer"]
   multi_layer_range: 2  # l* +/- 2

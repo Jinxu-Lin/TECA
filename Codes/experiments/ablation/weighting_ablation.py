@@ -105,8 +105,8 @@ def run_weighting_ablation(cfg: dict) -> dict:
                     w = torch.tensor(bm25_scores[:len(grads)], dtype=torch.float32)
                 elif method == "uniform":
                     w = torch.ones(len(grads), dtype=torch.float32)
-                elif method == "tfidf":
-                    # Simple TF-IDF-like: inverse document frequency proxy using BM25 rank
+                elif method == "rank_inverse":
+                    # Rank-inverse weighting: 1/(rank+1) based on BM25 retrieval rank
                     w = torch.tensor([1.0 / (rank + 1) for rank in range(len(grads))], dtype=torch.float32)
                 else:
                     w = torch.ones(len(grads), dtype=torch.float32)
