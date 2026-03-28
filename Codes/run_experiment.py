@@ -436,11 +436,26 @@ def run_phase_2(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         results["status"] = "dry_run_ok"
         return results
 
-    # Full execution requires GPU + data; placeholder for structure
-    results["analyses"]["within_between"] = {"status": "pending_gpu"}
-    results["analyses"]["pc1_removal"] = {"status": "pending_gpu"}
-    results["analyses"]["retrieval_ablation"] = {"status": "pending_gpu"}
-    results["status"] = "pending_gpu"
+    # Full execution: delegate to standalone experiment scripts
+    from experiments.gm_quality.within_between_similarity import run_within_between_similarity
+    from experiments.gm_quality.pc1_removal import run_pc1_removal
+    from experiments.gm_quality.retrieval_ablation import run_retrieval_ablation
+
+    print("  Phase 2a: Within-fact vs between-fact gradient similarity...")
+    results["analyses"]["within_between"] = run_within_between_similarity(cfg)
+
+    print("  Phase 2b: PC1 removal analysis...")
+    results["analyses"]["pc1_removal"] = run_pc1_removal(cfg)
+
+    print("  Phase 2c: Retrieval method ablation...")
+    retrieval_methods = gm_cfg.get("retrieval_methods", ["bm25", "tfidf", "contriever", "uniform"])
+    retrieval_results = {}
+    for method in retrieval_methods:
+        print(f"    Method: {method}")
+        retrieval_results[method] = run_retrieval_ablation(cfg, method=method)
+    results["analyses"]["retrieval_ablation"] = retrieval_results
+
+    results["status"] = "completed"
     return results
 
 
@@ -690,7 +705,25 @@ def run_phase_4(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         results["status"] = "dry_run_ok"
         return results
 
-    results["status"] = "pending_gpu"
+    # Full execution: delegate to standalone ablation scripts
+    from experiments.ablation.topk_ablation import run_topk_ablation
+    from experiments.ablation.weighting_ablation import run_weighting_ablation
+    from experiments.ablation.loss_ablation import run_loss_ablation
+    from experiments.ablation.scope_ablation import run_scope_ablation
+
+    print("  Phase 4a: Top-k ablation...")
+    results["ablations"]["top_k"] = run_topk_ablation(cfg)
+
+    print("  Phase 4b: Weighting ablation...")
+    results["ablations"]["weighting"] = run_weighting_ablation(cfg)
+
+    print("  Phase 4c: Loss function ablation...")
+    results["ablations"]["loss_function"] = run_loss_ablation(cfg)
+
+    print("  Phase 4d: Scope ablation...")
+    results["ablations"]["scope"] = run_scope_ablation(cfg)
+
+    results["status"] = "completed"
     return results
 
 
@@ -715,7 +748,17 @@ def run_phase_5(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         results["status"] = "dry_run_ok"
         return results
 
-    results["status"] = "pending_gpu"
+    # Full execution: delegate to standalone extended analysis scripts
+    from experiments.full_scale.whitening_200 import run_whitening_200
+    from experiments.full_scale.memit_200 import run_memit_200
+
+    print("  Phase 5a: Whitening decomposition (H6)...")
+    results["analyses"]["whitening"] = run_whitening_200(cfg)
+
+    print("  Phase 5b: MEMIT cross-layer alignment...")
+    results["analyses"]["memit"] = run_memit_200(cfg)
+
+    results["status"] = "completed"
     return results
 
 
@@ -739,7 +782,25 @@ def run_phase_6(cfg: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
         results["status"] = "dry_run_ok"
         return results
 
-    results["status"] = "pending_gpu"
+    # Full execution: delegate to standalone cross-model scripts
+    from experiments.cross_model.gptj_rome import run_gptj_rome
+    from experiments.cross_model.gptj_tda import run_gptj_tda
+    from experiments.cross_model.gptj_tecs import run_gptj_tecs
+    from experiments.cross_model.gptj_positive_control import run_gptj_positive_control
+
+    print("  Phase 6a: GPT-J ROME editing...")
+    results["rome"] = run_gptj_rome(cfg)
+
+    print("  Phase 6b: GPT-J TDA gradients...")
+    results["tda"] = run_gptj_tda(cfg)
+
+    print("  Phase 6c: GPT-J TECS + subspace geometry...")
+    results["tecs"] = run_gptj_tecs(cfg)
+
+    print("  Phase 6d: GPT-J positive control...")
+    results["positive_control"] = run_gptj_positive_control(cfg)
+
+    results["status"] = "completed"
     return results
 
 
