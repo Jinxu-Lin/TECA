@@ -1,0 +1,14 @@
+{
+  "config_summary": "model=gpt2-xl, n_facts=200, phases=[4], retrieval=bm25, seed=42",
+  "dry_run": false,
+  "phases": {
+    "4": {
+      "phase": 4,
+      "status": "error: CUDA error: device-side assert triggered\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+    }
+  },
+  "timing": {
+    "4": 210.25
+  },
+  "total_time_seconds": 210.25
+}

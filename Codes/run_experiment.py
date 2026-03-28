@@ -55,7 +55,10 @@ def set_global_seed(seed: int) -> None:
             torch.cuda.manual_seed_all(seed)
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-        torch.use_deterministic_algorithms(True, warn_only=True)
+        # Note: torch.use_deterministic_algorithms(True) causes CUDA
+        # device-side asserts with some operations (e.g., scatter in
+        # cross-entropy loss on long sequences). We rely on fixed seeds
+        # + cuDNN deterministic mode instead.
     except ImportError:
         pass
 

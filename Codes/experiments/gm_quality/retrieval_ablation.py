@@ -239,7 +239,7 @@ def run_retrieval_ablation(cfg: dict, method: str) -> dict:
             else:
                 raise ValueError(f"Unknown method: {method}")
 
-            training_texts = [r["text"] for r in retrieved[:top_k_gradient]]
+            training_texts = [r["text"][:512] for r in retrieved[:top_k_gradient]]
             weights = [r["score"] for r in retrieved[:top_k_gradient]] if method != "uniform" else None
 
             g_M = compute_aggregated_gradient(

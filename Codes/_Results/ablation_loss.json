@@ -1,0 +1,38 @@
+{
+  "experiment": "ablation_loss",
+  "phase": "4",
+  "timestamp": "2026-03-29T04:33:21",
+  "elapsed_sec": 1214.6199853420258,
+  "config": {
+    "loss_functions": [
+      "object_token_ce",
+      "full_sequence_ce",
+      "margin"
+    ],
+    "num_facts": 200,
+    "seed": 42
+  },
+  "per_loss_results": {
+    "object_token_ce": {
+      "n": 200,
+      "mean": -0.0006093440595577703,
+      "std": 0.006182829309440751
+    },
+    "full_sequence_ce": {
+      "n": 200,
+      "mean": -0.0032086348230586734,
+      "std": 0.006840793071820109
+    },
+    "margin": {
+      "n": 200,
+      "mean": 0.0022712555573889404,
+      "std": 0.0076869017192734155
+    }
+  },
+  "robustness": {
+    "mean_tecs_across_losses": -0.0005155744417425012,
+    "max_relative_variation": 5.405291212094833,
+    "robust": false
+  },
+  "git_commit": "890defb"
+}

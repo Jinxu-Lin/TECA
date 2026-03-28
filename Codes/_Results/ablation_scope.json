@@ -1,0 +1,43 @@
+{
+  "experiment": "ablation_scope",
+  "phase": "4",
+  "timestamp": "2026-03-29T04:58:31",
+  "elapsed_sec": 1509.5617549419403,
+  "config": {
+    "edit_layer": 17,
+    "multi_layers": [
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "num_facts": 200,
+    "seed": 42
+  },
+  "single_layer": {
+    "mean": -0.0032086348230586734,
+    "std": 0.006840793071820109
+  },
+  "multi_layer": {
+    "mean": -0.0014355075250568916,
+    "std": 0.0030551880741839657
+  },
+  "statistical_test": {
+    "name": "|TECS_multi| vs |TECS_single|",
+    "mean_real": 0.0026780252022945207,
+    "mean_null": 0.005996432970168826,
+    "mean_diff": -0.003318407767874305,
+    "cohens_d": -1.301938168441276,
+    "t_stat": -18.4121861518084,
+    "p_value": 7.470538261422607e-45,
+    "ci_95_low": -0.0036763464039859172,
+    "ci_95_high": -0.0029752178485396145,
+    "n": 200
+  },
+  "robustness": {
+    "relative_variation": 0.7635973082182792,
+    "robust": false
+  },
+  "git_commit": "890defb"
+}

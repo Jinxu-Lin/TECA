@@ -1,0 +1,1044 @@
+{
+  "experiment": "gm_within_between",
+  "phase": "2a",
+  "timestamp": "2026-03-28T20:42:34",
+  "elapsed_sec": 746.5569181442261,
+  "config": {
+    "model": "gpt2-xl",
+    "edit_layer": 17,
+    "num_facts": 200,
+    "top_k": 20,
+    "seed": 42
+  },
+  "within_fact": {
+    "mean": 0.010762875895934968,
+    "std": 0.008155978289714946,
+    "median": 0.009319654295790028
+  },
+  "between_fact": {
+    "mean": 0.13472392914816736,
+    "std": 0.05806002075754169,
+    "median": 0.12822073698043823,
+    "n_pairs": 200
+  },
+  "statistical_test": {
+    "name": "Within-fact vs Between-fact gradient cosine similarity",
+    "mean_real": 0.010762875895934968,
+    "mean_null": 0.13472392914816736,
+    "mean_diff": -0.1239610532522324,
+    "cohens_d": -2.1076096586336437,
+    "t_stat": -29.80610163428228,
+    "p_value": 2.5725959071727133e-75,
+    "ci_95_low": -0.13211919967890967,
+    "ci_95_high": -0.11603735307651489,
+    "n": 200
+  },
+  "decision": {
+    "within_gt_between": false,
+    "significant": true,
+    "interpretation": "Gradients may be dominated by GENERIC component: within-fact and between-fact similarity are not significantly different"
+  },
+  "per_fact_results": [
+    {
+      "case_id": 20952,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013012164269699306
+    },
+    {
+      "case_id": 3648,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010512497523656126
+    },
+    {
+      "case_id": 819,
+      "n_grads": 20,
+      "within_mean_cosine": 0.027279464526518974
+    },
+    {
+      "case_id": 9012,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0016377249076820015
+    },
+    {
+      "case_id": 8024,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011560789588781374
+    },
+    {
+      "case_id": 7314,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013709341138861705
+    },
+    {
+      "case_id": 4572,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01065286376106087
+    },
+    {
+      "case_id": 3358,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006832725009342922
+    },
+    {
+      "case_id": 17870,
+      "n_grads": 20,
+      "within_mean_cosine": 0.02408242463448244
+    },
+    {
+      "case_id": 2848,
+      "n_grads": 20,
+      "within_mean_cosine": 0.06920090464957053
+    },
+    {
+      "case_id": 19349,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010086162819980496
+    },
+    {
+      "case_id": 13825,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007213736615468454
+    },
+    {
+      "case_id": 1041,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011116788783922521
+    },
+    {
+      "case_id": 976,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008125017177073795
+    },
+    {
+      "case_id": 3070,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010134806402799625
+    },
+    {
+      "case_id": 7164,
+      "n_grads": 20,
+      "within_mean_cosine": 0.00977503423883287
+    },
+    {
+      "case_id": 7623,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009887035425134328
+    },
+    {
+      "case_id": 16559,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008761116075651157
+    },
+    {
+      "case_id": 19726,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008679636300535334
+    },
+    {
+      "case_id": 869,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009665300001625167
+    },
+    {
+      "case_id": 18390,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010278299409363076
+    },
+    {
+      "case_id": 6515,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004926046497942145
+    },
+    {
+      "case_id": 21295,
+      "n_grads": 20,
+      "within_mean_cosine": 0.00446347405450548
+    },
+    {
+      "case_id": 17856,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006687942083149928
+    },
+    {
+      "case_id": 13746,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013217052350295203
+    },
+    {
+      "case_id": 7223,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005321394666105717
+    },
+    {
+      "case_id": 14719,
+      "n_grads": 20,
+      "within_mean_cosine": 0.003537262639082129
+    },
+    {
+      "case_id": 19309,
+      "n_grads": 20,
+      "within_mean_cosine": 0.02114504355815466
+    },
+    {
+      "case_id": 9115,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010733571582348209
+    },
+    {
+      "case_id": 212,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009069620836970372
+    },
+    {
+      "case_id": 5231,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010531430434907394
+    },
+    {
+      "case_id": 13848,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005925949828470996
+    },
+    {
+      "case_id": 11149,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01305341328854985
+    },
+    {
+      "case_id": 9105,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010699044945996368
+    },
+    {
+      "case_id": 5094,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005825910615538688
+    },
+    {
+      "case_id": 7055,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0033207930247667002
+    },
+    {
+      "case_id": 11029,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011427099424212142
+    },
+    {
+      "case_id": 3349,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01194539788971449
+    },
+    {
+      "case_id": 3039,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014151822223912428
+    },
+    {
+      "case_id": 12449,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006421501543962605
+    },
+    {
+      "case_id": 3169,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010589084445459057
+    },
+    {
+      "case_id": 11763,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007066795701422579
+    },
+    {
+      "case_id": 11270,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009305395314693574
+    },
+    {
+      "case_id": 19782,
+      "n_grads": 20,
+      "within_mean_cosine": 0.028810651359411788
+    },
+    {
+      "case_id": 8667,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014043262904535942
+    },
+    {
+      "case_id": 1423,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010825609020991434
+    },
+    {
+      "case_id": 15054,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011179426522606886
+    },
+    {
+      "case_id": 17571,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014620182957878569
+    },
+    {
+      "case_id": 4090,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005760033303216149
+    },
+    {
+      "case_id": 12403,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007760053572938456
+    },
+    {
+      "case_id": 2582,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008559960617486994
+    },
+    {
+      "case_id": 18089,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005656991882862808
+    },
+    {
+      "case_id": 9606,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006433107403963253
+    },
+    {
+      "case_id": 20599,
+      "n_grads": 20,
+      "within_mean_cosine": 0.016565511166347854
+    },
+    {
+      "case_id": 20267,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006125795576065828
+    },
+    {
+      "case_id": 11850,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010007234717302613
+    },
+    {
+      "case_id": 18918,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011238133278637083
+    },
+    {
+      "case_id": 6300,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010418178338113648
+    },
+    {
+      "case_id": 2279,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007434289880860122
+    },
+    {
+      "case_id": 1501,
+      "n_grads": 20,
+      "within_mean_cosine": 0.002478681635664926
+    },
+    {
+      "case_id": 21668,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010385864339868453
+    },
+    {
+      "case_id": 7467,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008079632179100085
+    },
+    {
+      "case_id": 9482,
+      "n_grads": 20,
+      "within_mean_cosine": 0.016743641079397333
+    },
+    {
+      "case_id": 2614,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007668966415064316
+    },
+    {
+      "case_id": 7628,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013472566360389081
+    },
+    {
+      "case_id": 3309,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0031557489905696314
+    },
+    {
+      "case_id": 12455,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004238373696295495
+    },
+    {
+      "case_id": 9108,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010022746065863574
+    },
+    {
+      "case_id": 14857,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004777931968228107
+    },
+    {
+      "case_id": 20830,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004616175412344378
+    },
+    {
+      "case_id": 11954,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005574511469412276
+    },
+    {
+      "case_id": 5329,
+      "n_grads": 20,
+      "within_mean_cosine": 0.003581190530722348
+    },
+    {
+      "case_id": 12130,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009726227693497428
+    },
+    {
+      "case_id": 11641,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0157974409929011
+    },
+    {
+      "case_id": 6865,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005624415672469982
+    },
+    {
+      "case_id": 8748,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0042930771723101654
+    },
+    {
+      "case_id": 21234,
+      "n_grads": 20,
+      "within_mean_cosine": 0.02089955078385844
+    },
+    {
+      "case_id": 2339,
+      "n_grads": 20,
+      "within_mean_cosine": 0.00678905064966162
+    },
+    {
+      "case_id": 19960,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009719108753396492
+    },
+    {
+      "case_id": 20806,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004440569325111267
+    },
+    {
+      "case_id": 5607,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01747703321341664
+    },
+    {
+      "case_id": 17502,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0062096165786706
+    },
+    {
+      "case_id": 8021,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005332265102218739
+    },
+    {
+      "case_id": 5354,
+      "n_grads": 20,
+      "within_mean_cosine": 0.012038139057537927
+    },
+    {
+      "case_id": 15147,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005622636780945437
+    },
+    {
+      "case_id": 12433,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011331314495519587
+    },
+    {
+      "case_id": 8845,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005710847406345764
+    },
+    {
+      "case_id": 20971,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007419747326754365
+    },
+    {
+      "case_id": 18250,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014607849555154404
+    },
+    {
+      "case_id": 7196,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0240977732416073
+    },
+    {
+      "case_id": 10626,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004603425799838365
+    },
+    {
+      "case_id": 1832,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009681963027488612
+    },
+    {
+      "case_id": 7505,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007687608920023673
+    },
+    {
+      "case_id": 1051,
+      "n_grads": 20,
+      "within_mean_cosine": 0.00697763574395008
+    },
+    {
+      "case_id": 10336,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007665470508034463
+    },
+    {
+      "case_id": 13145,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008316367885134623
+    },
+    {
+      "case_id": 8773,
+      "n_grads": 20,
+      "within_mean_cosine": 0.002716563731021444
+    },
+    {
+      "case_id": 2168,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008477314172801256
+    },
+    {
+      "case_id": 6913,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006845890978921057
+    },
+    {
+      "case_id": 18585,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0073155766066951115
+    },
+    {
+      "case_id": 10311,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004509277499083079
+    },
+    {
+      "case_id": 6967,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01238074757746194
+    },
+    {
+      "case_id": 21477,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008268777753533197
+    },
+    {
+      "case_id": 16358,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010103483982493344
+    },
+    {
+      "case_id": 12964,
+      "n_grads": 20,
+      "within_mean_cosine": 0.012555038999141144
+    },
+    {
+      "case_id": 21064,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005011331206792659
+    },
+    {
+      "case_id": 15035,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006046081479220639
+    },
+    {
+      "case_id": 4681,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01318959172008602
+    },
+    {
+      "case_id": 8679,
+      "n_grads": 20,
+      "within_mean_cosine": 0.002584381736883906
+    },
+    {
+      "case_id": 4575,
+      "n_grads": 20,
+      "within_mean_cosine": 0.003586669871372961
+    },
+    {
+      "case_id": 8081,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004741864613912951
+    },
+    {
+      "case_id": 18394,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009333913276886482
+    },
+    {
+      "case_id": 17661,
+      "n_grads": 20,
+      "within_mean_cosine": 0.022364544541051145
+    },
+    {
+      "case_id": 8609,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006610936362525727
+    },
+    {
+      "case_id": 19155,
+      "n_grads": 20,
+      "within_mean_cosine": 0.00510711314807754
+    },
+    {
+      "case_id": 14038,
+      "n_grads": 20,
+      "within_mean_cosine": 0.012964067205719307
+    },
+    {
+      "case_id": 19121,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010364994555799823
+    },
+    {
+      "case_id": 13087,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006324265829416139
+    },
+    {
+      "case_id": 11861,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0033184945525901737
+    },
+    {
+      "case_id": 7186,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005863613532059581
+    },
+    {
+      "case_id": 4532,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007187718861142027
+    },
+    {
+      "case_id": 16696,
+      "n_grads": 20,
+      "within_mean_cosine": 0.033917574368378584
+    },
+    {
+      "case_id": 16171,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011898460655509936
+    },
+    {
+      "case_id": 2978,
+      "n_grads": 20,
+      "within_mean_cosine": 0.00666034445982261
+    },
+    {
+      "case_id": 1543,
+      "n_grads": 20,
+      "within_mean_cosine": 0.021341545665314984
+    },
+    {
+      "case_id": 3592,
+      "n_grads": 20,
+      "within_mean_cosine": 0.017852201435322824
+    },
+    {
+      "case_id": 5008,
+      "n_grads": 20,
+      "within_mean_cosine": 0.031234423019036752
+    },
+    {
+      "case_id": 20560,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007852879468957422
+    },
+    {
+      "case_id": 5242,
+      "n_grads": 20,
+      "within_mean_cosine": 0.02557237743695671
+    },
+    {
+      "case_id": 13833,
+      "n_grads": 20,
+      "within_mean_cosine": 0.020796464023566698
+    },
+    {
+      "case_id": 19543,
+      "n_grads": 20,
+      "within_mean_cosine": 0.054972330190996316
+    },
+    {
+      "case_id": 2081,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006388424644127985
+    },
+    {
+      "case_id": 12608,
+      "n_grads": 20,
+      "within_mean_cosine": 0.007453369367340201
+    },
+    {
+      "case_id": 12504,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014766753637032755
+    },
+    {
+      "case_id": 19526,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009827225716128995
+    },
+    {
+      "case_id": 15337,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004510514274749623
+    },
+    {
+      "case_id": 17338,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009590364265769542
+    },
+    {
+      "case_id": 8238,
+      "n_grads": 20,
+      "within_mean_cosine": 0.018416511739441806
+    },
+    {
+      "case_id": 18128,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006931551232417788
+    },
+    {
+      "case_id": 376,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006005665162956575
+    },
+    {
+      "case_id": 3753,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006523916691137281
+    },
+    {
+      "case_id": 17595,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010314770994361759
+    },
+    {
+      "case_id": 8743,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010463514303448487
+    },
+    {
+      "case_id": 21003,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014919452885116794
+    },
+    {
+      "case_id": 11146,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0049748599748693926
+    },
+    {
+      "case_id": 3655,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013774170938191482
+    },
+    {
+      "case_id": 9617,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010118544003053013
+    },
+    {
+      "case_id": 14246,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009985483709591025
+    },
+    {
+      "case_id": 5182,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01009226608060233
+    },
+    {
+      "case_id": 14867,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013962395614362322
+    },
+    {
+      "case_id": 106,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004782320674367886
+    },
+    {
+      "case_id": 8630,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0058927319761048575
+    },
+    {
+      "case_id": 16403,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008308520973246471
+    },
+    {
+      "case_id": 5854,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005639879633159389
+    },
+    {
+      "case_id": 16635,
+      "n_grads": 20,
+      "within_mean_cosine": 0.016370822227020798
+    },
+    {
+      "case_id": 3486,
+      "n_grads": 20,
+      "within_mean_cosine": 0.003764920321868646
+    },
+    {
+      "case_id": 20489,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006548951650562997
+    },
+    {
+      "case_id": 9779,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0044205184609286095
+    },
+    {
+      "case_id": 20937,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01015516385331897
+    },
+    {
+      "case_id": 19954,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010894569316099622
+    },
+    {
+      "case_id": 6517,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01838528520709492
+    },
+    {
+      "case_id": 12252,
+      "n_grads": 20,
+      "within_mean_cosine": 0.003081609265255362
+    },
+    {
+      "case_id": 5293,
+      "n_grads": 20,
+      "within_mean_cosine": 0.017244770559581842
+    },
+    {
+      "case_id": 17674,
+      "n_grads": 20,
+      "within_mean_cosine": 0.02768845621419467
+    },
+    {
+      "case_id": 17378,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01012259254132579
+    },
+    {
+      "case_id": 18,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011252831445093953
+    },
+    {
+      "case_id": 19626,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006563614667500492
+    },
+    {
+      "case_id": 10621,
+      "n_grads": 20,
+      "within_mean_cosine": 0.008524007069919255
+    },
+    {
+      "case_id": 16010,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009865505387728932
+    },
+    {
+      "case_id": 638,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0063023573150483
+    },
+    {
+      "case_id": 3665,
+      "n_grads": 20,
+      "within_mean_cosine": 0.015065529343203371
+    },
+    {
+      "case_id": 11894,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006837504404565583
+    },
+    {
+      "case_id": 10076,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0033081582523759845
+    },
+    {
+      "case_id": 7846,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004510768316954215
+    },
+    {
+      "case_id": 1898,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010186620106641816
+    },
+    {
+      "case_id": 7892,
+      "n_grads": 20,
+      "within_mean_cosine": 0.011031363930535583
+    },
+    {
+      "case_id": 18591,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010392275938418032
+    },
+    {
+      "case_id": 2580,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005009976575284351
+    },
+    {
+      "case_id": 2806,
+      "n_grads": 20,
+      "within_mean_cosine": 0.010860824156215561
+    },
+    {
+      "case_id": 15924,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01581768388898222
+    },
+    {
+      "case_id": 2267,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009213364346516373
+    },
+    {
+      "case_id": 17455,
+      "n_grads": 20,
+      "within_mean_cosine": 0.006305165530686377
+    },
+    {
+      "case_id": 4120,
+      "n_grads": 20,
+      "within_mean_cosine": 0.046739934511472375
+    },
+    {
+      "case_id": 4207,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009177698657118814
+    },
+    {
+      "case_id": 21618,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01805735234206383
+    },
+    {
+      "case_id": 15574,
+      "n_grads": 20,
+      "within_mean_cosine": 0.020979520871065017
+    },
+    {
+      "case_id": 18015,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0026684324426337535
+    },
+    {
+      "case_id": 5410,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01188570844450097
+    },
+    {
+      "case_id": 8685,
+      "n_grads": 20,
+      "within_mean_cosine": 0.0048225506499253055
+    },
+    {
+      "case_id": 17290,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005714286281363457
+    },
+    {
+      "case_id": 19876,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005051097344901217
+    },
+    {
+      "case_id": 13865,
+      "n_grads": 20,
+      "within_mean_cosine": 0.013245356171268883
+    },
+    {
+      "case_id": 6940,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004865604189820404
+    },
+    {
+      "case_id": 17671,
+      "n_grads": 20,
+      "within_mean_cosine": 0.005954861993154736
+    },
+    {
+      "case_id": 6591,
+      "n_grads": 20,
+      "within_mean_cosine": 0.004556108930907948
+    },
+    {
+      "case_id": 10214,
+      "n_grads": 20,
+      "within_mean_cosine": 0.02027870374429193
+    },
+    {
+      "case_id": 13074,
+      "n_grads": 20,
+      "within_mean_cosine": 0.022971816208231948
+    },
+    {
+      "case_id": 12236,
+      "n_grads": 20,
+      "within_mean_cosine": 0.014966915229582043
+    },
+    {
+      "case_id": 14355,
+      "n_grads": 20,
+      "within_mean_cosine": 0.009249574100479213
+    },
+    {
+      "case_id": 16959,
+      "n_grads": 20,
+      "within_mean_cosine": 0.01427791522897008
+    }
+  ],
+  "git_commit": "890defb"
+}

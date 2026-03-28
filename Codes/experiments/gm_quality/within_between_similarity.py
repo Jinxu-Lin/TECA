@@ -100,7 +100,7 @@ def run_within_between_similarity(cfg: dict) -> dict:
             retrieved = retrieve_training_samples_bm25(
                 query, top_k=top_k_candidates, index_path=index_path,
             )
-            training_texts = [r["text"] for r in retrieved[:top_k]]
+            training_texts = [r["text"][:512] for r in retrieved[:top_k]]
 
             grads = compute_per_sample_gradients(
                 model, tokenizer, training_texts, edit_layer, device=device,

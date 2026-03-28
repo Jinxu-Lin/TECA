@@ -99,7 +99,7 @@ def run_pc1_removal(cfg: dict) -> dict:
             retrieved = retrieve_training_samples_bm25(
                 query, top_k=top_k_candidates, index_path=index_path,
             )
-            training_texts = [r["text"] for r in retrieved[:top_k_gradient]]
+            training_texts = [r["text"][:512] for r in retrieved[:top_k_gradient]]
             weights = [r["score"] for r in retrieved[:top_k_gradient]]
 
             g_M = compute_aggregated_gradient(

@@ -90,7 +90,7 @@ def run_topk_ablation(cfg: dict) -> dict:
             retrieved = retrieve_training_samples_bm25(
                 query, top_k=top_k_candidates, index_path=index_path,
             )
-            training_texts = [r["text"] for r in retrieved[:max_k]]
+            training_texts = [r["text"][:512] for r in retrieved[:max_k]]
             weights = [r["score"] for r in retrieved[:max_k]]
 
             grads = compute_per_sample_gradients(
@@ -112,6 +112,9 @@ def run_topk_ablation(cfg: dict) -> dict:
                 k_results[k].append(tecs)
 
         except Exception as e:
+            import traceback
+            print(f"  [{i + 1}/{len(facts)}] ERROR: {e}")
+            traceback.print_exc()
             continue
 
         if (i + 1) % 20 == 0:

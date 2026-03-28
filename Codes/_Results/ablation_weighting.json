@@ -1,0 +1,41 @@
+{
+  "experiment": "ablation_weighting",
+  "phase": "4",
+  "timestamp": "2026-03-28T17:40:00",
+  "elapsed_sec": 811.4648365974426,
+  "config": {
+    "methods": [
+      "bm25",
+      "uniform",
+      "rank_inverse"
+    ],
+    "num_facts": 200,
+    "seed": 42
+  },
+  "per_method_results": {
+    "bm25": {
+      "n": 200,
+      "mean": -0.0032086348230586734,
+      "std": 0.006840793071820109,
+      "median": -0.0029036920750513673
+    },
+    "uniform": {
+      "n": 200,
+      "mean": -0.003252368163593928,
+      "std": 0.006807794756939926,
+      "median": -0.0031548234401270747
+    },
+    "rank_inverse": {
+      "n": 200,
+      "mean": -0.002344406717165839,
+      "std": 0.006918867792057523,
+      "median": -0.0021369728492572904
+    }
+  },
+  "robustness": {
+    "mean_tecs_across_methods": -0.0029351365679394802,
+    "max_relative_variation": 0.20126145312153032,
+    "robust": false
+  },
+  "git_commit": "890defb"
+}

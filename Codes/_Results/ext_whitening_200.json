@@ -1,0 +1,57 @@
+{
+  "experiment": "ext_whitening_200",
+  "phase": "5",
+  "timestamp": "2026-03-29T05:17:48",
+  "elapsed_sec": 50.345258474349976,
+  "config": {
+    "n_facts": 200,
+    "model": "gpt2-xl",
+    "edit_layer": 17,
+    "seed": 42
+  },
+  "distributions": {
+    "raw": {
+      "mean": -0.0003165413982605969,
+      "std": 0.0042028515120005345
+    },
+    "unwhitened": {
+      "mean": -0.0007625371536778403,
+      "std": 0.007998156093500833
+    },
+    "whitened": {
+      "mean": 0.00017354599738609978,
+      "std": 0.001791219705605672
+    }
+  },
+  "statistical_tests": {
+    "unwhitened_vs_raw": {
+      "name": "TECS_unwhitened vs TECS_raw",
+      "mean_real": -0.0007625371536778403,
+      "mean_null": -0.0003165413982605969,
+      "mean_diff": -0.00044599575541724333,
+      "cohens_d": -0.09126777844769018,
+      "t_stat": -1.2907213008838634,
+      "p_value": 0.19829787279602684,
+      "ci_95_low": -0.001128139713972359,
+      "ci_95_high": 0.00023561850933128875,
+      "n": 200
+    },
+    "whitened_vs_raw": {
+      "name": "TECS_whitened vs TECS_raw",
+      "mean_real": 0.00017354599738609978,
+      "mean_null": -0.0003165413982605969,
+      "mean_diff": 0.0004900873956466967,
+      "cohens_d": 0.09621492881153951,
+      "t_stat": 1.3606845722804102,
+      "p_value": 0.17515247547383464,
+      "ci_95_low": -0.00022801029875199654,
+      "ci_95_high": 0.0012006434592008186,
+      "n": 200
+    }
+  },
+  "decision": {
+    "h6_whitening_explains_gap": false,
+    "interpretation": "NOT SUPPORTED: Whitening is not the primary source of the gap"
+  },
+  "git_commit": "890defb"
+}
